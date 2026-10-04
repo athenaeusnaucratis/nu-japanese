@@ -150,6 +150,8 @@ window.addEventListener('hashchange', () => {
 // --------- Rendering ----------
 function render() {
     renderNav();
+    hideSheet();
+    sheetOpener = null;
     const main = document.getElementById('content');
     main.innerHTML = '';
     if (storageBroken) main.appendChild(el('div', {class: 'notice'},
@@ -402,7 +404,11 @@ function renderKanaGrid(section) {
             if (cell == null) grid.appendChild(el('div', {class: 'kana-cell empty'}));
             else {
                 const [g, r] = cell;
-                const c = el('div', {class: 'kana-cell', onclick: ev => playFromRow(ev.currentTarget, g)},
+                const c = el('button', {class: 'kana-cell', type: 'button', onclick: ev => {
+                        const b = ev.currentTarget;
+                        playFromRow(b, g);
+                        openSheet(g, b, !!b.closest('.hide-roma'));
+                    }},
                     el('div', {class: 'glyph', html: richText(g)}),
                     el('div', {class: 'roma', html: richText(r)})
                 );
@@ -413,6 +419,99 @@ function renderKanaGrid(section) {
     wrap.appendChild(grid);
     return wrap;
 }
+
+// --------- Detail sheet ----------
+// Non-modal: the grid stays usable and the next tap updates the sheet, so
+// playing sounds in a row is never interrupted.
+let sheetOpener = null;     // element to return focus to on close
+let sheetConceal = false;   // the opening grid had "Hide readings" on
+
+function sheetEl() {
+    let s = document.getElementById('glyph-sheet');
+    if (!s) {
+        s = el('aside', {id: 'glyph-sheet', class: 'sheet', role: 'dialog', 'aria-label': 'Character details'});
+        s.hidden = true;
+        document.body.appendChild(s);
+    }
+    return s;
+}
+
+function concealable(cls, text) {
+    return el('button', {type: 'button', class: cls + (sheetConceal ? ' concealed' : ''),
+        title: sheetConceal ? 'Tap to show' : '',
+        onclick: ev => ev.currentTarget.classList.remove('concealed')}, text);
+}
+
+function glyphChip(ch) {
+    const g = COURSE.glyphs[ch];
+    if (!g) return el('span', {class: 'glyph-chip static inline-jp'}, el('span', {class: 'g'}, ch));
+    return el('button', {type: 'button', class: 'glyph-chip', onclick: () => { speak(ch); openSheet(ch); }},
+        el('span', {class: 'g inline-jp'}, ch),
+        el('span', {class: 'r' + (sheetConceal ? ' concealed' : '')}, g.romaji));
+}
+
+function label(text) { return el('span', {class: 'sheet-label'}, text); }
+
+// Returns false when the character has no record yet (sound still plays).
+function openSheet(ch, opener, conceal) {
+    const g = COURSE.glyphs[ch];
+    if (!g) return false;
+    if (opener) { sheetOpener = opener; sheetConceal = !!conceal; }
+    const s = sheetEl();
+    s.innerHTML = '';
+    s.appendChild(el('div', {class: 'sheet-head'},
+        el('div', {class: 'sheet-glyph inline-jp'}, ch),
+        concealable('sheet-roma', g.romaji),
+        el('button', {class: 'row-btn', type: 'button', title: 'Play audio',
+            onclick: ev => playFromRow(ev.currentTarget, ch)}, svgSpeaker()),
+        el('button', {class: 'sheet-close', type: 'button', 'aria-label': 'Close', onclick: closeSheet}, '✕')));
+    if (g.base) {
+        s.appendChild(el('div', {class: 'sheet-base'}, label('Made from'),
+            glyphChip(g.base), ' + ' + g.mark + ' ',
+            el('span', {class: 'sheet-note'}, g.mark === '゛'
+                ? 'dakuten — the two ticks voice the consonant'
+                : 'handakuten — the small circle turns h into p')));
+    }
+    if (g.hook) s.appendChild(el('p', {class: 'sheet-hook'}, label('Memory hook'), g.hook));
+    if (g.origin) s.appendChild(el('p', {class: 'sheet-origin'}, label('Origin'),
+        'Simplified from the kanji ', el('span', {class: 'inline-jp'}, g.origin), '.'));
+    if (g.voiced.length) s.appendChild(el('div', {class: 'sheet-voiced'}, label('With marks'), ...g.voiced.map(glyphChip)));
+    if (g.looksLike.length) s.appendChild(el('div', {class: 'sheet-alike'}, label('Don’t confuse with'), ...g.looksLike.map(glyphChip)));
+    if (g.example) {
+        const [jp, reading, en] = g.example;
+        s.appendChild(el('div', {class: 'sheet-example'}, label('Example'),
+            el('span', {class: 'inline-jp ex-jp'}, jp), ' ',
+            concealable('sheet-reading', reading), ' ',
+            el('span', {class: 'ex-en'}, en), ' ',
+            el('button', {class: 'row-btn', type: 'button', title: 'Play example',
+                onclick: ev => playFromRow(ev.currentTarget, jp)}, svgSpeaker())));
+    }
+    s.hidden = false;
+    document.body.classList.add('sheet-open');
+    // Phone: keep the tapped cell visible above the bottom sheet.
+    if (opener && opener.getBoundingClientRect) {
+        const r = opener.getBoundingClientRect(), top = s.getBoundingClientRect().top;
+        if (top > 0 && r.bottom > top - 8) window.scrollBy(0, r.bottom - top + 16);
+    }
+    return true;
+}
+
+function hideSheet() {
+    const s = document.getElementById('glyph-sheet');
+    if (s) s.hidden = true;
+    document.body.classList.remove('sheet-open');
+}
+
+function closeSheet() {
+    hideSheet();
+    if (sheetOpener && document.contains(sheetOpener)) sheetOpener.focus();
+    sheetOpener = null;
+}
+
+document.addEventListener('keydown', ev => {
+    const s = document.getElementById('glyph-sheet');
+    if (ev.key === 'Escape' && s && !s.hidden) closeSheet();
+});
 
 function renderKanjiGrid(section) {
     const wrap = el('div', {});

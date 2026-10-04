@@ -118,6 +118,17 @@ backup written, `knownVocab` kept), dashboard 2 / 431, speech text にほんじ�
 storage untouched after real reload + two week visits, notice shown; no console
 errors. **Merged to `main` on the user's go (2026-10-04).**
 
+### Round B1, batch 1 — in flight (branch `round-b1-hiragana`)
+Detail sheet + 46 hiragana hooks (`src/content_glyphs.py`, built into
+`COURSE.glyphs` by `make_glyphs()` in `build.py`). Tap a kana: plays the sound
+and opens a non-modal sheet (bottom sheet ≤820px, 340px side panel above) with
+glyph, romaji, memory hook, origin kanji, voiced forms, look-alikes, example.
+Voiced kana link back to their base ("か + ゛"). Katakana cells still play
+sound but open no sheet until batch 2. Tests: `tests/test_glyphs.py`,
+`tests/sheet.test.js` (written first). Checked in Chrome at 375 (light) and
+1024 (dark). Review list for the user: `docs/reviews/b1-hiragana-hooks.md`.
+**Waiting on:** the user's review of the hooks on the preview, then merge.
+
 ## 5. Next — decided, in order
 
 **Task 1 (cheap insurance, only urgent if Windows tools ever write files here)
@@ -172,6 +183,11 @@ handwriting/stroke-order features.
 - Unverified external resource claims (Netflix availability of Terrace House,
   Italki pricing, etc.).
 - iOS Enhanced Japanese voice test (earlier agent's item): needs a device.
+- **Dark-mode contrast of accent-coloured text (on the live site already):** `--accent` (#8B2635) as
+  text on dark backgrounds is 1.9–2.1:1. B1 added `--accent-text` (#e07a8f in
+  dark, 5.76:1) and uses it for the sheet glyph only. Six older uses still on
+  `--accent`, for Round E: `nav .brand .title-jp`, `h1`, `.week-marker`,
+  `.kanji-card .k`, `.hero .hero-jp`, `.stat .n`.
 - **Mobile horizontal overflow (on the live site, not caused by Round A)**, measured at
   375 px: week-1 399, week-4 383, week-9 394, week-10 392, vocab index 426 px
   wide. Cause 1: `.app` grid column is `1fr` (min-content) → fix with

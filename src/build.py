@@ -20,6 +20,7 @@ sys.path.insert(0, SRC)
 from content_front import FRONT_MATTER, RESOURCES
 from content_weeks import WEEKS
 from content_appx import APPENDICES
+import content_glyphs
 
 # Vocab rows that existed before stable IDs and were deliberately removed:
 # the week 9 te-form rules, now a table. Stars on them are dropped silently.
@@ -89,6 +90,38 @@ def _annotate(sections):
             sec['rows'] = [list(r[:3]) for r in sec['rows']]
 
 
+def _chart_romaji():
+    """glyph -> romaji, taken from every kana chart (the single source)."""
+    out = {}
+    for sec in [s for w in WEEKS for s in w['sections']] + [s for a in APPENDICES for s in a['sections']]:
+        if sec['type'] == 'kana':
+            for row in sec['rows']:
+                for cell in row:
+                    if cell:
+                        out.setdefault(cell[0], cell[1])
+    return out
+
+
+def make_glyphs():
+    """Records for the detail sheet, keyed by character (see content_glyphs.py)."""
+    romaji = _chart_romaji()
+    g = {}
+    for ch, origin, hook, example in content_glyphs.HIRAGANA:
+        g[ch] = {'romaji': romaji[ch], 'hook': hook, 'origin': origin,
+                 'example': list(example), 'looksLike': [], 'voiced': []}
+    for base, voiced, mark in content_glyphs.VOICED:
+        g[voiced] = {'romaji': romaji[voiced], 'base': base, 'mark': mark,
+                     'looksLike': [], 'voiced': []}
+        g[base]['voiced'].append(voiced)
+    for group in content_glyphs.LOOKALIKE_GROUPS:
+        for ch in group:
+            if ch in g:
+                for other in group:
+                    if other != ch and other not in g[ch]['looksLike']:
+                        g[ch]['looksLike'].append(other)
+    return g
+
+
 def make_course():
     weeks = copy.deepcopy(WEEKS)
     appendices = copy.deepcopy(APPENDICES)
@@ -108,6 +141,8 @@ def make_course():
         'legacyKeys': _read_json('legacy_keys.json'),
         # Old stable ID -> current ID, for when a word is corrected later.
         'idAliases': _read_json('id_aliases.json'),
+        # Detail-sheet data per character (hooks, origins, look-alikes, voicing).
+        'glyphs': make_glyphs(),
     }
 
 

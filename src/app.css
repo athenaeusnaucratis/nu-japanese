@@ -22,6 +22,7 @@
     --nav-bg: #f3efe8;
     --nav-active: #ffffff;
     --focus-ring: rgba(139, 38, 53, 0.35);
+    --accent-text: #8B2635;   /* accent used as TEXT; lighter in dark mode for contrast */
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -29,6 +30,7 @@
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
         --ink: #ecebe6;
+        --accent-text: #e07a8f;
         --muted: #b4b1a9;
         --very-muted: #8c8a84;
         --bg: #15161a;
@@ -51,6 +53,7 @@
 }
 :root[data-theme="dark"] {
     --ink: #ecebe6;
+    --accent-text: #e07a8f;
     --muted: #b4b1a9;
     --very-muted: #8c8a84;
     --bg: #15161a;
@@ -408,6 +411,93 @@ table.vocab td.actions { white-space: nowrap; text-align: right; width: 1%; }
 .kana-cell.playing { background: var(--accent); color: white; }
 .kana-cell.playing .roma { color: rgba(255,255,255,0.8); }
 .hide-roma .kana-cell .roma { opacity: 0; }
+button.kana-cell { font: inherit; color: inherit; padding: 0; width: 100%; }
+button.kana-cell:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+
+/* ---------- Detail sheet (non-modal) ---------- */
+.sheet {
+    position: fixed;
+    z-index: 30;
+    background: var(--bg-raised);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 14px 18px calc(16px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+}
+.sheet[hidden] { display: none; }
+@media (max-width: 820px) {
+    .sheet {
+        left: 0; right: 0; bottom: 0;
+        max-height: 55vh;
+        border-radius: 14px 14px 0 0;
+        box-shadow: 0 -6px 24px rgba(0,0,0,0.18);
+    }
+    body.sheet-open main.content { padding-bottom: 58vh; }
+}
+@media (min-width: 821px) {
+    .sheet {
+        top: 0; right: 0; bottom: 0;
+        width: 340px;
+        padding-top: calc(18px + env(safe-area-inset-top, 0px));
+        box-shadow: -6px 0 24px rgba(0,0,0,0.12);
+    }
+    body.sheet-open .app { padding-right: 340px; }
+}
+.sheet-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.sheet-glyph { font-size: 56px; line-height: 1; color: var(--accent-text); }
+.sheet-roma, .sheet-reading {
+    font: inherit;
+    border: none;
+    background: none;
+    color: var(--muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: default;
+}
+.sheet-roma { font-size: 18px; }
+.sheet-roma.concealed, .sheet-reading.concealed, .glyph-chip .r.concealed {
+    color: transparent;
+    background: var(--table-row-alt);
+    cursor: pointer;
+}
+.sheet-close {
+    margin-left: auto;
+    width: 34px; height: 34px;
+    border: 1px solid var(--rule);
+    background: var(--bg-raised);
+    color: var(--ink);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+}
+.sheet-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--very-muted);
+    margin-bottom: 3px;
+}
+.sheet p, .sheet-base, .sheet-voiced, .sheet-alike, .sheet-example { margin: 0 0 14px; font-size: 15px; }
+.sheet-note { color: var(--muted); font-size: 13px; }
+.sheet .ex-jp { font-size: 18px; }
+.sheet .ex-en { color: var(--muted); }
+.glyph-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 2px 6px 2px 0;
+    padding: 4px 11px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--bg-raised);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+}
+.glyph-chip .g { font-size: 20px; }
+.glyph-chip .r { font-size: 12px; color: var(--muted); border-radius: 3px; padding: 0 2px; }
+.glyph-chip.static { cursor: default; opacity: 0.75; }
 
 /* ---------- Kanji reference grid ---------- */
 .kanji-grid { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); margin: 16px 0; }
