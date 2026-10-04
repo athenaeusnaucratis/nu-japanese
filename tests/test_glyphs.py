@@ -143,3 +143,94 @@ class LookAlikes(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+# ------------------------------------------------------------------ kanji (batch 3)
+import xml.etree.ElementTree as ET  # noqa: E402
+
+FIXTURES = os.path.join(os.path.dirname(__file__), 'fixtures')
+# Picture-origin kanji that get a drawing. Pinned: adding one is a decision.
+PICTOGRAPHS = set('日月火水木山川田口目耳手人子女大雨魚犬車')
+# The only kanji allowed an "Origin" line: the pictographs above plus a few
+# whose origin is textbook-standard. Everything else is labelled "memory hook".
+ORIGIN_OK = PICTOGRAPHS | set('一二三上下本立生行母')
+# KRADFILE uses stand-in characters for elements outside JIS X 0208.
+KRAD_STANDIN = {'亻': '化', '刂': '刈', '艹': '艾', '辶': '込', '⺌': '尚', '灬': '杰', '罒': '買'}
+
+
+def kradfile():
+    out = {}
+    with open(os.path.join(FIXTURES, 'kradfile_subset.txt'), encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('#') or ' : ' not in line:
+                continue
+            k, v = line.rstrip('\n').split(' : ', 1)
+            out[k] = set(v.split())
+    return out
+
+
+def part_ok(krad, kanji, part):
+    """A part is backed if KRADFILE lists it (or its stand-in) for the kanji,
+    or if every component of the part also appears in the kanji."""
+    comps = krad[kanji]
+    return KRAD_STANDIN.get(part, part) in comps or (part in krad and krad[part] <= comps)
+
+
+class Kanji(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from content_kanji import KANJI
+        cls.KANJI = KANJI
+        cls.g = build.make_course()['glyphs']
+        cls.krad = kradfile()
+
+    def test_every_kanji_has_a_record(self):
+        for glyph, meaning, info in self.KANJI:
+            r = self.g.get(glyph)
+            with self.subTest(k=glyph):
+                self.assertIsNotNone(r)
+                self.assertEqual(r['script'], 'kanji')
+                self.assertEqual(r['meaning'], meaning)
+                self.assertEqual(r['readings'], info)
+                self.assertTrue(r['hook'].strip())
+                self.assertLessEqual(len(r['hook']), 160)
+
+    def test_parts_are_backed_by_kradfile(self):
+        for glyph, r in self.g.items():
+            if r.get('script') != 'kanji':
+                continue
+            for part, meaning in r.get('parts', []):
+                with self.subTest(k=glyph, part=part):
+                    self.assertTrue(meaning)
+                    self.assertTrue(part_ok(self.krad, glyph, part), f'{part} not a component of {glyph}')
+
+    def test_part_rule_rejects_near_misses(self):
+        # must pass
+        self.assertTrue(part_ok(self.krad, '休', '亻'))     # via stand-in 化
+        self.assertTrue(part_ok(self.krad, '休', '木'))
+        self.assertTrue(part_ok(self.krad, '時', '寺'))     # 寺 = 土 寸, both in 時
+        self.assertTrue(part_ok(self.krad, '話', '舌'))
+        # must fail
+        self.assertFalse(part_ok(self.krad, '休', '口'))
+        self.assertFalse(part_ok(self.krad, '男', '木'))
+        self.assertFalse(part_ok(self.krad, '時', '寸口'[1]))
+        self.assertFalse(part_ok(self.krad, '読', '売口'[1]))
+
+    def test_drawings_only_for_pictographs_and_safe(self):
+        drawn = {k for k, r in self.g.items() if r.get('svg')}
+        self.assertEqual(drawn, PICTOGRAPHS)
+        for k in drawn:
+            svg = self.g[k]['svg']
+            with self.subTest(k=k):
+                root = ET.fromstring(svg)                  # well-formed XML
+                self.assertTrue(root.tag.endswith('svg'))
+                self.assertEqual(root.get('viewBox'), '0 0 100 100')
+                low = svg.lower()
+                self.assertNotIn('<script', low)
+                self.assertNotIn('href', low)
+                self.assertFalse(any(a.lower().startswith('on') for el in root.iter() for a in el.attrib))
+
+    def test_origin_only_where_well_established(self):
+        with_origin = {k for k, r in self.g.items() if r.get('script') == 'kanji' and r.get('origin')}
+        self.assertLessEqual(with_origin, ORIGIN_OK)
+        self.assertLessEqual(PICTOGRAPHS, with_origin)

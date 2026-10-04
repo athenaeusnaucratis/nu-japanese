@@ -498,6 +498,16 @@ button.kana-cell:focus-visible { outline: 2px solid var(--focus-ring); outline-o
 .glyph-chip .g { font-size: 20px; }
 .glyph-chip .r { font-size: 12px; color: var(--muted); border-radius: 3px; padding: 0 2px; }
 .glyph-chip.static { cursor: default; opacity: 0.75; }
+button.kanji-card { font: inherit; color: inherit; text-align: left; cursor: pointer; width: 100%; }
+button.kanji-card:hover { background: var(--table-row-alt); }
+button.kanji-card:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+button.kanji-card.playing { border-color: var(--accent); }
+.sheet-meaning { font-size: 17px; color: var(--ink); font-weight: 500; }
+.sheet-readings .readings { font-size: 14px; }
+.sheet-drawing { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; color: var(--ink); }
+.sheet-drawing .pic svg { width: 84px; height: 84px; display: block; }
+.sheet-drawing .arrow { color: var(--very-muted); font-size: 22px; }
+.sheet-drawing .to { font-size: 56px; line-height: 1; color: var(--accent-text); }
 
 /* ---------- Kanji reference grid ---------- */
 .kanji-grid { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); margin: 16px 0; }

@@ -125,3 +125,45 @@ test('leaving the page closes the sheet', async () => {
   p.go('week-1');
   assert.equal(isOpen(p), false);
 });
+
+// ------------------------------------------------------------- kanji (batch 3)
+const card = (p, k) => [...p.doc.querySelectorAll('.kanji-card')].find(c => c.querySelector('.k')?.textContent === k);
+
+test('kanji card is a button: speaks and opens the sheet', async () => {
+  const p = await loadPage();
+  p.go('week-11');
+  const c = card(p, '山');
+  assert.equal(c.tagName, 'BUTTON');
+  c.click();
+  assert.deepEqual(p.spoken, ['山']);
+  const s = sheet(p);
+  assert.ok(isOpen(p));
+  assert.equal(s.querySelector('.sheet-glyph').textContent, '山');
+  assert.match(s.querySelector('.sheet-meaning').textContent, /mountain/);
+  assert.match(s.querySelector('.sheet-readings').textContent, /yama/);
+  assert.ok(s.querySelector('.sheet-drawing svg'), 'pictograph drawing shown');
+  assert.ok(s.querySelector('.sheet-origin'));
+});
+
+test('compound kanji lists its parts; a part that is itself a kanji is tappable', async () => {
+  const p = await loadPage();
+  p.go('week-12');
+  card(p, '休').click();
+  const parts = [...sheet(p).querySelectorAll('.sheet-parts .glyph-chip')];
+  const tree = parts.find(c => c.textContent.includes('木'));
+  assert.ok(tree);
+  assert.equal(tree.tagName, 'BUTTON');
+  tree.click();
+  assert.equal(sheet(p).querySelector('.sheet-glyph').textContent, '木');
+  assert.ok(sheet(p).querySelector('.sheet-origin'));
+});
+
+test('non-pictograph kanji: memory hook, no origin, no drawing', async () => {
+  const p = await loadPage();
+  p.go('appx-kanji-100');
+  card(p, '何').click();
+  const s = sheet(p);
+  assert.ok(s.querySelector('.sheet-hook'));
+  assert.equal(s.querySelector('.sheet-origin'), null);
+  assert.equal(s.querySelector('.sheet-drawing'), null);
+});

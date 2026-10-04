@@ -21,6 +21,7 @@ from content_front import FRONT_MATTER, RESOURCES
 from content_weeks import WEEKS
 from content_appx import APPENDICES
 import content_glyphs
+from content_kanji import KANJI
 
 # Vocab rows that existed before stable IDs and were deliberately removed:
 # the week 9 te-form rules, now a table. Stars on them are dropped silently.
@@ -102,6 +103,11 @@ def _chart_romaji():
     return out
 
 
+_SVG_OPEN = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" '
+             'stroke="currentColor" stroke-width="5" stroke-linecap="round" '
+             'stroke-linejoin="round" aria-hidden="true">')
+
+
 def make_glyphs():
     """Records for the detail sheet, keyed by character (see content_glyphs.py)."""
     romaji = _chart_romaji()
@@ -114,6 +120,16 @@ def make_glyphs():
                 g[ch]['origin'] = origin
             if example:
                 g[ch]['example'] = list(example)
+    for ch, meaning, info in KANJI:
+        hook, origin, parts = content_glyphs.KANJI_HOOKS[ch]
+        g[ch] = {'script': 'kanji', 'meaning': meaning, 'readings': info, 'hook': hook,
+                 'looksLike': [], 'voiced': []}
+        if origin:
+            g[ch]['origin'] = origin
+        if parts:
+            g[ch]['parts'] = [list(p) for p in parts]
+        if ch in content_glyphs.KANJI_SVG:
+            g[ch]['svg'] = (_SVG_OPEN + content_glyphs.KANJI_SVG[ch] + '</svg>')
     for base, voiced, mark in content_glyphs.VOICED:
         g[voiced] = {'romaji': romaji[voiced], 'base': base, 'mark': mark,
                      'looksLike': [], 'voiced': []}

@@ -33,6 +33,7 @@ RESOURCES = [
     {'title': 'Dictionaries & look-up', 'items': [
         '<b>Jisho.org</b> — the standard online Japanese-English dictionary. Searches by kanji, kana, romaji, or English.',
         '<b>Takoboto</b> — excellent free dictionary app for iOS and Android, works offline.',
+        '<b>KRADFILE</b> (Electronic Dictionary Research &amp; Development Group) — kanji component data used to check the &ldquo;Built from&rdquo; parts in this course. &copy; EDRDG, used under its licence (CC BY-SA 4.0).',
     ]},
     {'title': 'Grammar references (free)', 'items': [
         '<b>Tae Kim&rsquo;s Guide to Japanese Grammar</b> — the classic free online grammar guide.',

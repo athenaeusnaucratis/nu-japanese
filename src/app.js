@@ -447,10 +447,18 @@ function glyphChip(ch) {
     if (!g) return el('span', {class: 'glyph-chip static inline-jp'}, el('span', {class: 'g'}, ch));
     return el('button', {type: 'button', class: 'glyph-chip', onclick: () => { speak(ch); openSheet(ch); }},
         el('span', {class: 'g inline-jp'}, ch),
-        el('span', {class: 'r' + (sheetConceal ? ' concealed' : '')}, g.romaji));
+        g.romaji ? el('span', {class: 'r' + (sheetConceal ? ' concealed' : '')}, g.romaji)
+                 : el('span', {class: 'r', html: richText(g.meaning)}));
 }
 
 function label(text) { return el('span', {class: 'sheet-label'}, text); }
+
+// A component of a kanji: tappable when it is itself a character with a record.
+function partChip(part, meaning) {
+    const inner = [el('span', {class: 'g inline-jp'}, part), el('span', {class: 'r'}, meaning)];
+    if (!COURSE.glyphs[part]) return el('span', {class: 'glyph-chip static'}, ...inner);
+    return el('button', {type: 'button', class: 'glyph-chip', onclick: () => { speak(part); openSheet(part); }}, ...inner);
+}
 
 // Returns false when the character has no record yet (sound still plays).
 function openSheet(ch, opener, conceal) {
@@ -461,7 +469,8 @@ function openSheet(ch, opener, conceal) {
     s.innerHTML = '';
     s.appendChild(el('div', {class: 'sheet-head'},
         el('div', {class: 'sheet-glyph inline-jp'}, ch),
-        concealable('sheet-roma', g.romaji),
+        g.script === 'kanji' ? el('div', {class: 'sheet-meaning', html: richText(g.meaning)})
+                             : concealable('sheet-roma', g.romaji),
         el('button', {class: 'row-btn', type: 'button', title: 'Play audio',
             onclick: ev => playFromRow(ev.currentTarget, ch)}, svgSpeaker()),
         el('button', {class: 'sheet-close', type: 'button', 'aria-label': 'Close', onclick: closeSheet}, '✕')));
@@ -472,10 +481,18 @@ function openSheet(ch, opener, conceal) {
                 ? 'dakuten — the two ticks voice the consonant'
                 : 'handakuten — the small circle turns h into p')));
     }
+    if (g.readings) s.appendChild(el('p', {class: 'sheet-readings inline-jp'}, label('Readings'),
+        el('span', {class: 'readings', html: richText(g.readings)})));
+    if (g.svg) s.appendChild(el('div', {class: 'sheet-drawing'},
+        el('span', {class: 'pic', html: g.svg}), el('span', {class: 'arrow'}, '\u2192'),
+        el('span', {class: 'inline-jp to'}, ch)));
     if (g.hook) s.appendChild(el('p', {class: 'sheet-hook'}, label('Memory hook'), g.hook));
     if (g.origin) s.appendChild(el('p', {class: 'sheet-origin'}, label('Origin'),
-        g.script === 'katakana' ? 'Taken from part of the kanji ' : 'Simplified from the kanji ',
-        el('span', {class: 'inline-jp'}, g.origin), '.'));
+        ...(g.script === 'kanji' ? [g.origin] : [
+            g.script === 'katakana' ? 'Taken from part of the kanji ' : 'Simplified from the kanji ',
+            el('span', {class: 'inline-jp'}, g.origin), '.'])));
+    if (g.parts) s.appendChild(el('div', {class: 'sheet-parts'}, label('Built from'),
+        ...g.parts.map(([part, meaning]) => partChip(part, meaning))));
     if (g.voiced.length) s.appendChild(el('div', {class: 'sheet-voiced'}, label('With marks'), ...g.voiced.map(glyphChip)));
     if (g.looksLike.length) s.appendChild(el('div', {class: 'sheet-alike'}, label('Don’t confuse with'), ...g.looksLike.map(glyphChip)));
     if (g.example) {
@@ -519,8 +536,12 @@ function renderKanjiGrid(section) {
     if (section.title) wrap.appendChild(el('h3', {html: richText(section.title)}));
     const grid = el('div', {class: 'kanji-grid'});
     section.items.forEach((it, idx) => {
-        grid.appendChild(el('div', {class: 'kanji-card'},
-            el('div', {class: 'k inline-jp', html: richText(it[0]), onclick: () => speak(it[0])}),
+        grid.appendChild(el('button', {class: 'kanji-card', type: 'button', onclick: ev => {
+                const b = ev.currentTarget;
+                playFromRow(b, it[0]);
+                openSheet(it[0], b, false);
+            }},
+            el('div', {class: 'k inline-jp', html: richText(it[0])}),
             el('div', {class: 'info'},
                 el('div', {class: 'n'}, '#' + (section.startAt ? section.startAt + idx : idx + 1)),
                 el('div', {class: 'm', html: richText(it[1])}),
