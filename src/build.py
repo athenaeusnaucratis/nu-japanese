@@ -8,34 +8,28 @@ Usage:
 index.html is GENERATED. Never hand-edit it — edit app.css / app.js, the
 content_*.py modules or this file, and rebuild, or your changes get overwritten.
 """
+import copy
 import json
 import os
 import re
 import sys
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+SRC = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(SRC)
+sys.path.insert(0, SRC)
 from content_front import FRONT_MATTER, RESOURCES
 from content_weeks import WEEKS
 from content_appx import APPENDICES
 
-# Default: index.html at the repo root (one level up from src/).
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO_ROOT, 'index.html')
-_outdir = os.path.dirname(os.path.abspath(OUT))
-if _outdir:
-    os.makedirs(_outdir, exist_ok=True)
-
-COURSE = {
-    'title': 'Beginner Japanese',
-    'titleJp': 'はじめての にほんご',
-    'subtitle': 'A 12-Week Course',
-    'front': FRONT_MATTER,
-    'resources': RESOURCES,
-    'weeks': WEEKS,
-    'appendices': APPENDICES,
-}
-
-SRC = os.path.dirname(os.path.abspath(__file__))
+# Vocab rows that existed before stable IDs and were deliberately removed:
+# the week 9 te-form rules, now a table. Stars on them are dropped silently.
+RETIRED_IDS = [
+    'v:う, つ, る → って|u, tsu, ru → tte',
+    'v:ぶ, む, ぬ → んで|bu, mu, nu → nde',
+    'v:く → いて|ku → ite',
+    'v:ぐ → いで|gu → ide',
+    'v:す → して|su → shite',
+]
 
 
 def _read(name):
@@ -44,8 +38,78 @@ def _read(name):
         return f.read()
 
 
+def _read_json(name):
+    with open(os.path.join(SRC, name), encoding='utf-8') as f:
+        return json.load(f)
+
+
 CSS = _read('app.css')
 JS = _read('app.js')
+
+# ------------------------------------------------------------------ vocab IDs
+def vocab_id(row):
+    """Stable ID of a vocab row: the word itself, not its position."""
+    return 'v:' + row[0] + '|' + row[1]
+
+
+_KANA = re.compile(r'^[\u3040-\u30ff〜～、 ]+$')   # hiragana, katakana (incl. ー), tilde, comma
+
+
+def speak_text(jp):
+    """Text handed to speechSynthesis for a vocab cell (see tests/test_content.py)."""
+    s = jp
+    if ' / ' in s:
+        parts = [p.strip() for p in s.split(' / ')]
+        kana = [p for p in parts if _KANA.match(p)]
+        s = '、'.join(kana) if kana else parts[0]
+    s = re.sub(r'\[[^\]]*\]', '', s)          # [noun], [name] placeholders
+    s = s.replace('(な)', '')
+    s = s.replace('〜', '').replace('～', '')
+    s = s.replace('…', '、')
+    return s.strip()
+
+
+def all_vocab_rows():
+    for w in WEEKS:
+        for sec in w['sections']:
+            if sec['type'] == 'vocab':
+                yield from sec['rows']
+    for a in APPENDICES:
+        for sec in a['sections']:
+            if sec['type'] == 'vocab':
+                yield from sec['rows']
+
+
+def _annotate(sections):
+    for sec in sections:
+        if sec['type'] == 'vocab':
+            sec['ids'] = [vocab_id(r) for r in sec['rows']]
+            # optional 4th element overrides the derived speak text
+            sec['speak'] = [r[3] if len(r) > 3 else speak_text(r[0]) for r in sec['rows']]
+            sec['rows'] = [list(r[:3]) for r in sec['rows']]
+
+
+def make_course():
+    weeks = copy.deepcopy(WEEKS)
+    appendices = copy.deepcopy(APPENDICES)
+    for w in weeks:
+        _annotate(w['sections'])
+    for a in appendices:
+        _annotate(a['sections'])
+    return {
+        'title': 'Beginner Japanese',
+        'titleJp': 'はじめての にほんご',
+        'subtitle': 'A 12-Week Course',
+        'front': FRONT_MATTER,
+        'resources': RESOURCES,
+        'weeks': weeks,
+        'appendices': appendices,
+        # Old positional star keys -> stable IDs; frozen, see tools/make_legacy_keys.py
+        'legacyKeys': _read_json('legacy_keys.json'),
+        # Old stable ID -> current ID, for when a word is corrected later.
+        'idAliases': _read_json('id_aliases.json'),
+    }
+
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
@@ -83,20 +147,24 @@ __JS__
 """
 
 
-def build():
-    parts = {
-        'CSS': CSS,
-        'COURSE_JSON': json.dumps(COURSE, ensure_ascii=False),
-        'JS': JS,
-    }
+def render_html():
+    course_json = json.dumps(make_course(), ensure_ascii=False)
+    # Content holds HTML like </b>; inside <script> a literal "</" could end the
+    # script early (e.g. "</script>" in an SVG string). "<\/" is the same JSON.
+    course_json = course_json.replace('</', '<\\/')
+    parts = {'CSS': CSS, 'COURSE_JSON': course_json, 'JS': JS}
     # One pass over the template only, so a placeholder name appearing inside
     # app.css / app.js / content can never be substituted.
-    html = re.sub(r'__(CSS|COURSE_JSON|JS)__', lambda m: parts[m.group(1)], HTML_TEMPLATE)
-    with open(OUT, 'w', encoding='utf-8') as f:
-        f.write(html)
-    size = os.path.getsize(OUT)
-    print(f'OK: {OUT}  ({size/1024:.1f} KB)')
+    return re.sub(r'__(CSS|COURSE_JSON|JS)__', lambda m: parts[m.group(1)], HTML_TEMPLATE)
+
+
+def build(out):
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, 'w', encoding='utf-8') as f:
+        f.write(render_html())
+    print(f'OK: {out}  ({os.path.getsize(out)/1024:.1f} KB)')
 
 
 if __name__ == '__main__':
-    build()
+    # Default: index.html at the repo root (one level up from src/).
+    build(sys.argv[1] if len(sys.argv) > 1 else os.path.join(REPO_ROOT, 'index.html'))

@@ -1,5 +1,7 @@
 # Reference appendices for the course.
 
+from content_kanji import KANJI
+
 APPENDICES = []
 
 # ---------- Hiragana ----------
@@ -67,46 +69,12 @@ APPENDICES.append({
 })
 
 # ---------- 100 Kanji ----------
-_K1_50 = [
-    # Numbers 1-10
-    ('一','one','ichi'),('二','two','ni'),('三','three','san'),('四','four','yon/shi'),('五','five','go'),
-    ('六','six','roku'),('七','seven','nana/shichi'),('八','eight','hachi'),('九','nine','kyuu/ku'),('十','ten','juu'),
-    # Days & time 11-20
-    ('日','day/sun','hi/nichi'),('月','moon/month','tsuki/getsu'),('火','fire','hi/ka'),('水','water','mizu/sui'),('木','tree','ki/moku'),
-    ('金','gold/money','kane/kin'),('土','earth','tsuchi/do'),('曜','day of week','you'),('時','time/hour','toki/ji'),('年','year','toshi/nen'),
-    # People & family 21-30
-    ('人','person','hito/jin'),('男','man','otoko/dan'),('女','woman','onna/jo'),('子','child','ko/shi'),('父','father','chichi/fu'),
-    ('母','mother','haha/bo'),('友','friend','tomo/yuu'),('先','ahead','saki/sen'),('生','life/birth','iki/sei'),('名','name','na/mei'),
-    # Position 31-40
-    ('大','big','oo/dai'),('小','small','chii/shou'),('中','middle/inside','naka/chuu'),('上','above/up','ue/jou'),('下','below/down','shita/ka'),
-    ('前','before/front','mae/zen'),('後','after/behind','ushiro/go'),('外','outside','soto/gai'),('右','right','migi/u'),('左','left','hidari/sa'),
-    # Body & nature 41-50
-    ('口','mouth','kuchi/kou'),('目','eye','me/moku'),('手','hand','te/shu'),('足','foot/leg','ashi/soku'),('耳','ear','mimi/ji'),
-    ('力','power','chikara/ryoku'),('山','mountain','yama/san'),('川','river','kawa/sen'),('田','rice field','ta/den'),('円','yen','en'),
-]
-_K51_100 = [
-    # Verbs 51-60
-    ('行','to go','iku/kou'),('来','to come','kuru/rai'),('食','to eat','taberu/shoku'),('飲','to drink','nomu/in'),('見','to see','miru/ken'),
-    ('聞','to hear/ask','kiku/bun'),('読','to read','yomu/doku'),('書','to write','kaku/sho'),('話','to speak','hanasu/wa'),('買','to buy','kau/bai'),
-    # Places 61-70
-    ('家','house','ie/ka'),('店','shop','mise/ten'),('駅','station','eki'),('道','road','michi/dou'),('町','town','machi/chou'),
-    ('市','city','ichi/shi'),('国','country','kuni/koku'),('車','car','kuruma/sha'),('電','electricity','den'),('気','spirit/air','ki'),
-    # Nature 71-80
-    ('花','flower','hana/ka'),('空','sky','sora/kuu'),('雨','rain','ame/u'),('天','heaven/weather','ten'),('魚','fish','sakana/gyo'),
-    ('犬','dog','inu/ken'),('入','enter','hairu/iru/nyuu'),('出','exit','deru/shutsu'),('休','rest','yasumu/kyuu'),('立','stand','tatsu/ritsu'),
-    # Study 81-90
-    ('学','learn','manabu/gaku'),('校','school','kou'),('高','high/expensive','takai/kou'),('英','English','ei'),('語','language','kataru/go'),
-    ('本','book/origin','hon/moto'),('文','sentence','bun'),('字','character','ji'),('今','now','ima/kon'),('半','half','han'),
-    # Essentials 91-100
-    ('何','what','nani/nan'),('百','hundred','hyaku'),('千','thousand','sen'),('万','ten thousand','man'),('午','noon','go'),
-    ('朝','morning','asa/chou'),('昼','noon/day','hiru/chuu'),('夜','night','yoru/ya'),('新','new','atara/shin'),('長','long/chief','naga/chou'),
-]
 APPENDICES.append({
     'id': 'kanji-100',
     'title': '100 N5 Kanji Reference',
     'intro': 'The 100 kanji taught in weeks 11 and 12, numbered in order of appearance. Tap any kanji to hear it spoken.',
     'sections': [
-        {'type': 'kanji-grid', 'startAt': 1, 'items': _K1_50 + _K51_100},
+        {'type': 'kanji-grid', 'startAt': 1, 'items': KANJI},
     ],
 })
 

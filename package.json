@@ -1,0 +1,12 @@
+{
+  "name": "nu-japanese",
+  "private": true,
+  "description": "Dev tooling only. The shipped index.html has no runtime dependencies.",
+  "scripts": {
+    "gen": "python3 -B src/build.py",
+    "test": "python3 -B -m unittest discover -s tests -p 'test_*.py' && node --test 'tests/*.test.js'"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}

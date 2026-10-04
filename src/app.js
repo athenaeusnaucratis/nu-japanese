@@ -1,26 +1,74 @@
 
 const STORAGE_KEY = 'jp_course_v1';
+// No `schema` here on purpose: it must come from storage (or be set after a
+// successful load), so Object.assign can never make an old blob look migrated.
 let state = {
     view: 'welcome',
     weekStatus: {},     // {1: 'started'|'complete', ...}
-    knownVocab: {},     // {'w1-0': true, ...}
+    known: {},          // {'v:ねこ|neko': true} — stable vocab IDs (schema 2)
     hideEn: false,
     hideRoma: false,
     theme: null,        // null = system, 'light', 'dark'
 };
+// Set when stored progress can't be read. Saving is then disabled for the
+// session, so unreadable data is never overwritten with defaults.
+let storageBroken = false;
 
 function saveState() {
+    if (storageBroken) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
 }
+
+function resolveId(id) {
+    const seen = new Set();
+    while (COURSE.idAliases[id] && !seen.has(id)) { seen.add(id); id = COURSE.idAliases[id]; }
+    return id;
+}
+
+// Schema 1 stored stars by position ('w1-s6-v8'). Move them to stable IDs.
+// Returns a new object; `knownVocab` is kept untouched so an older build
+// still finds its stars after a rollback.
+function migrateToSchema2(loaded) {
+    const known = Object.assign({}, loaded.known || {});
+    const legacyUnmapped = {};
+    const old = loaded.knownVocab || {};
+    for (const k in old) {
+        const id = COURSE.legacyKeys[k];
+        if (!id) { legacyUnmapped[k] = old[k]; continue; }
+        if (old[k] === true) known[resolveId(id)] = true;   // true anywhere wins; false is dropped
+    }
+    return Object.assign({}, loaded, { known, legacyUnmapped, schema: 2 });
+}
+
 function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-            const loaded = JSON.parse(raw);
+    let raw = null;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { storageBroken = true; }
+    if (raw) {
+        try {
+            let loaded = JSON.parse(raw);
+            if (!loaded || typeof loaded !== 'object' || Array.isArray(loaded)) throw new Error('not an object');
+            if (!(loaded.schema >= 2)) {
+                try { localStorage.setItem(STORAGE_KEY + '_bak', raw); } catch (e) {}
+                loaded = migrateToSchema2(loaded);
+            }
             state = Object.assign(state, loaded);
+        } catch (e) {
+            storageBroken = true;
         }
-    } catch (e) {}
+    }
+    if (!storageBroken) state.schema = 2;
     if (state.theme) document.documentElement.dataset.theme = state.theme;
+}
+
+// Every starrable vocab ID in the course (weeks + appendices), deduplicated.
+let _allVocabIds = null;
+function allVocabIds() {
+    if (!_allVocabIds) {
+        _allVocabIds = new Set();
+        const secs = [].concat(...COURSE.weeks.map(w => w.sections), ...COURSE.appendices.map(a => a.sections));
+        secs.filter(s => s.type === 'vocab').forEach(s => s.ids.forEach(id => _allVocabIds.add(id)));
+    }
+    return _allVocabIds;
 }
 
 // Scope all route handling to the hash, so first paint can read it directly.
@@ -104,6 +152,9 @@ function render() {
     renderNav();
     const main = document.getElementById('content');
     main.innerHTML = '';
+    if (storageBroken) main.appendChild(el('div', {class: 'notice'},
+        'Your saved progress couldn\u2019t be read, so nothing will be saved during this visit. ' +
+        'The stored data has been left untouched.'));
     const v = state.view;
     if (v === 'welcome' || !v) main.appendChild(renderWelcome());
     else if (v === 'resources') main.appendChild(renderResources());
@@ -164,8 +215,9 @@ function navItem(id, label, num, status) {
 }
 
 function renderWelcome() {
-    const totalVocab = COURSE.weeks.reduce((n, w) => n + countVocab(w), 0);
-    const knownCount = Object.keys(state.knownVocab).filter(k => state.knownVocab[k]).length;
+    const ids = allVocabIds();
+    const totalVocab = ids.size;
+    const knownCount = Object.keys(state.known).filter(id => state.known[id] && ids.has(id)).length;
     const completedWeeks = COURSE.weeks.filter(w => state.weekStatus[w.num] === 'complete').length;
     const firstUnfinished = COURSE.weeks.find(w => state.weekStatus[w.num] !== 'complete') || COURSE.weeks[0];
     const main = el('div', {class: 'dashboard'});
@@ -203,12 +255,6 @@ function renderResources() {
     return main;
 }
 
-function countVocab(week) {
-    let n = 0;
-    week.sections.forEach(s => { if (s.type === 'vocab') n += s.rows.length; });
-    return n;
-}
-
 function renderWeek(num) {
     const week = COURSE.weeks.find(w => w.num === num);
     if (!week) return el('div', {}, 'Week not found.');
@@ -236,7 +282,7 @@ function renderSection(section, keyBase, weekNum) {
             section.items.forEach(it => ul.appendChild(el('li', {html: richText(it)})));
             return ul;
         }
-        case 'vocab': return renderVocab(section, keyBase, weekNum);
+        case 'vocab': return renderVocab(section);
         case 'kana': return renderKanaGrid(section);
         case 'grammar': return el('div', {class: 'box grammar'},
             section.title ? el('div', {class: 'box-title', html: richText(section.title)}) : null,
@@ -264,7 +310,7 @@ function renderSection(section, keyBase, weekNum) {
     return document.createTextNode('');
 }
 
-function renderVocab(section, keyBase, weekNum) {
+function renderVocab(section) {
     const wrap = el('div', {class: 'vocab-wrapper'});
     const toolbar = el('div', {class: 'vocab-toolbar'});
     const hideEnBtn = el('button', {class: 'btn' + (state.hideEn ? ' active' : ''),
@@ -273,9 +319,7 @@ function renderVocab(section, keyBase, weekNum) {
         onclick: () => { state.hideRoma = !state.hideRoma; saveState(); render(); }}, 'Hide reading');
     toolbar.appendChild(hideEnBtn);
     toolbar.appendChild(hidePrBtn);
-    const knownKeys = section.rows.map((_, i) => keyBase + '-v' + i);
-    const knownNow = knownKeys.filter(k => state.knownVocab[k]).length;
-    toolbar.appendChild(el('span', {class: 'count'}, knownNow + ' / ' + section.rows.length + ' known'));
+    toolbar.appendChild(el('span', {class: 'count'}, vocabCountLabel(section.ids)));
     wrap.appendChild(toolbar);
     if (section.title) wrap.appendChild(el('h3', {html: richText(section.title)}));
     const table = el('table', {class: 'vocab' + (state.hideEn ? ' hide-en' : '') + (state.hideRoma ? ' hide-pr' : '')});
@@ -287,16 +331,16 @@ function renderVocab(section, keyBase, weekNum) {
     );
     table.appendChild(thead);
     section.rows.forEach((row, i) => {
-        const key = keyBase + '-v' + i;
-        const known = !!state.knownVocab[key];
-        const tr = el('tr', {class: known ? 'known' : ''},
+        const id = section.ids[i];
+        const known = !!state.known[id];
+        const tr = el('tr', {class: known ? 'known' : '', 'data-vid': id},
             el('td', {class: 'jp-cell inline-jp', html: richText(row[0])}),
             el('td', {class: 'pr', html: richText(row[1]), onclick: ev => ev.currentTarget.classList.toggle('revealed')}),
             el('td', {class: 'en', html: richText(row[2]), onclick: ev => ev.currentTarget.classList.toggle('revealed')}),
             el('td', {class: 'actions'},
-                el('button', {class: 'row-btn', title: 'Play audio', onclick: ev => playFromRow(ev.currentTarget, row[0])},
+                el('button', {class: 'row-btn', title: 'Play audio', onclick: ev => playFromRow(ev.currentTarget, section.speak[i])},
                     svgSpeaker()),
-                el('button', {class: 'row-btn' + (known ? ' known' : ''), title: 'Mark known', onclick: ev => toggleKnown(ev.currentTarget, key)},
+                el('button', {class: 'row-btn' + (known ? ' known' : ''), title: 'Mark known', onclick: () => toggleKnown(id)},
                     svgStar())
             )
         );
@@ -311,19 +355,25 @@ function playFromRow(btn, text) {
     btn.classList.add('playing');
     speak(text, () => btn.classList.remove('playing'));
 }
-function toggleKnown(btn, key) {
-    const now = !state.knownVocab[key];
-    state.knownVocab[key] = now;
+function vocabCountLabel(ids) {
+    return ids.filter(id => state.known[id]).length + ' / ' + ids.length + ' known';
+}
+function toggleKnown(id) {
+    const now = !state.known[id];
+    if (now) state.known[id] = true; else delete state.known[id];
     saveState();
-    btn.classList.toggle('known', now);
-    const tr = btn.closest('tr'); if (tr) tr.classList.toggle('known', now);
-    // update count label without full re-render
-    const wrap = btn.closest('.vocab-wrapper');
-    if (wrap) {
-        const total = wrap.querySelectorAll('tr:not(.header)').length;
-        const known = wrap.querySelectorAll('tr.known').length;
-        const cnt = wrap.querySelector('.count'); if (cnt) cnt.textContent = known + ' / ' + total + ' known';
-    }
+    // The same word can appear more than once on a page: update every row,
+    // then every table's count, without a full re-render.
+    document.querySelectorAll('tr[data-vid]').forEach(tr => {
+        if (tr.getAttribute('data-vid') !== id) return;
+        tr.classList.toggle('known', now);
+        const star = tr.querySelector('button[title="Mark known"]');
+        if (star) star.classList.toggle('known', now);
+    });
+    document.querySelectorAll('.vocab-wrapper').forEach(wrap => {
+        const ids = [...wrap.querySelectorAll('tr[data-vid]')].map(tr => tr.getAttribute('data-vid'));
+        const cnt = wrap.querySelector('.count'); if (cnt) cnt.textContent = vocabCountLabel(ids);
+    });
 }
 
 function svgSpeaker() {
@@ -438,7 +488,7 @@ function toggleTheme() {
 function resetProgress() {
     if (!confirm('Reset all progress? This clears which weeks are complete and which vocabulary you\u2019ve marked known.')) return;
     state.weekStatus = {};
-    state.knownVocab = {};
+    state.known = {};
     saveState();
     render();
 }

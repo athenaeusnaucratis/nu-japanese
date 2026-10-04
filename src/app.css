@@ -512,6 +512,14 @@ table.vocab td.actions { white-space: nowrap; text-align: right; width: 1%; }
     flex-wrap: wrap;
 }
 .footer-settings .btn { font-size: 11px; }
+.notice {
+    background: var(--grammar-bg);
+    border: 1px solid var(--grammar-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    font-size: 14px;
+}
 .gift-note {
     text-align: center;
     color: var(--very-muted);
