@@ -474,7 +474,8 @@ function openSheet(ch, opener, conceal) {
     }
     if (g.hook) s.appendChild(el('p', {class: 'sheet-hook'}, label('Memory hook'), g.hook));
     if (g.origin) s.appendChild(el('p', {class: 'sheet-origin'}, label('Origin'),
-        'Simplified from the kanji ', el('span', {class: 'inline-jp'}, g.origin), '.'));
+        g.script === 'katakana' ? 'Taken from part of the kanji ' : 'Simplified from the kanji ',
+        el('span', {class: 'inline-jp'}, g.origin), '.'));
     if (g.voiced.length) s.appendChild(el('div', {class: 'sheet-voiced'}, label('With marks'), ...g.voiced.map(glyphChip)));
     if (g.looksLike.length) s.appendChild(el('div', {class: 'sheet-alike'}, label('Don’t confuse with'), ...g.looksLike.map(glyphChip)));
     if (g.example) {

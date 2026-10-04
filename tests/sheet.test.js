@@ -86,12 +86,36 @@ test('sheet respects "Hide readings" on the grid that opened it', async () => {
   assert.equal(roma.classList.contains('concealed'), false);
 });
 
-test('katakana (pending batch 2) still plays, opens no sheet', async () => {
+test('katakana opens the sheet; origin says "part of"', async () => {
   const p = await loadPage();
   p.go('appx-katakana');
   cell(p, 'ア').click();
   assert.deepEqual(p.spoken, ['ア']);
-  assert.equal(isOpen(p), false);
+  assert.ok(isOpen(p));
+  assert.match(sheet(p).querySelector('.sheet-origin').textContent, /part of the kanji 阿/);
+  // hiragana keeps its own wording
+  p.go('appx-hiragana');
+  cell(p, 'あ').click();
+  assert.match(sheet(p).querySelector('.sheet-origin').textContent, /Simplified from the kanji 安/);
+});
+
+test('look-alike outside the course is shown but not tappable', async () => {
+  const p = await loadPage();
+  p.go('appx-katakana');
+  cell(p, 'エ').click();
+  const chips = [...sheet(p).querySelectorAll('.sheet-alike .glyph-chip')];
+  const ko = chips.find(c => c.textContent.includes('工'));
+  assert.ok(ko);
+  assert.notEqual(ko.tagName, 'BUTTON');
+});
+
+test('ン has no origin line; ヲ has no example', async () => {
+  const p = await loadPage();
+  p.go('appx-katakana');
+  cell(p, 'ン').click();
+  assert.equal(sheet(p).querySelector('.sheet-origin'), null);
+  cell(p, 'ヲ').click();
+  assert.equal(sheet(p).querySelector('.sheet-example'), null);
 });
 
 test('leaving the page closes the sheet', async () => {

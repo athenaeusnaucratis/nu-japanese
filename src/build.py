@@ -106,9 +106,14 @@ def make_glyphs():
     """Records for the detail sheet, keyed by character (see content_glyphs.py)."""
     romaji = _chart_romaji()
     g = {}
-    for ch, origin, hook, example in content_glyphs.HIRAGANA:
-        g[ch] = {'romaji': romaji[ch], 'hook': hook, 'origin': origin,
-                 'example': list(example), 'looksLike': [], 'voiced': []}
+    for script, rows in (('hiragana', content_glyphs.HIRAGANA), ('katakana', content_glyphs.KATAKANA)):
+        for ch, origin, hook, example in rows:
+            g[ch] = {'romaji': romaji[ch], 'script': script, 'hook': hook,
+                     'looksLike': [], 'voiced': []}
+            if origin:
+                g[ch]['origin'] = origin
+            if example:
+                g[ch]['example'] = list(example)
     for base, voiced, mark in content_glyphs.VOICED:
         g[voiced] = {'romaji': romaji[voiced], 'base': base, 'mark': mark,
                      'looksLike': [], 'voiced': []}

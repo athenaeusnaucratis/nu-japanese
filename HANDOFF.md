@@ -129,6 +129,13 @@ sound but open no sheet until batch 2. Tests: `tests/test_glyphs.py`,
 1024 (dark). Review list for the user: `docs/reviews/b1-hiragana-hooks.md`.
 **Reviewed and approved by the user; merged to `main` (2026-10-04).**
 
+### Round B1, batch 2 — in flight (branch `round-b1-katakana`)
+46 katakana hooks + 25 voiced katakana in `content_glyphs.py`; every kana in
+every grid (142) now opens the sheet. Records carry `script`; katakana origins
+read "Taken from part of the kanji X" (hiragana: "Simplified from"). ン shows
+no origin (disputed), ヲ no example. Tests extended first. Review list:
+`docs/reviews/b1-katakana-hooks.md`. **Waiting on:** user review, then merge.
+
 ## 5. Next — decided, in order
 
 **Task 1 (cheap insurance, only urgent if Windows tools ever write files here)
