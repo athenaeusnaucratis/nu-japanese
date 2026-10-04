@@ -231,6 +231,12 @@ WEEKS.append({
             '<b>Real Kana</b> — switch to katakana mode.',
             '<b>Katakana Memory Hints</b> by Dr. Moku — mnemonic-based.',
         ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 4', 'items': [
+            'Can I read all 46 base katakana aloud, without looking at romaji, in under 90 seconds?',
+            'Can I tell look-alikes apart instantly: <span class="inline-jp">シ / ツ</span>, <span class="inline-jp">ソ / ン</span>, <span class="inline-jp">ク / ケ</span>?',
+            'Can I write my own name in katakana, using ー for long vowels?',
+            'Can I decode ten loan words from the list above back into English without the table?',
+        ]},
     ],
 })
 
@@ -280,7 +286,7 @@ WEEKS.append({
             ('八千','hassen','8,000 (sound change!)'),
             ('一万','ichiman','10,000'),
         ]},
-        {'type': 'p', 'text': '<b>Sound changes.</b> Numbers mutate before h-sounds: <i>san-hyaku</i> becomes <i>sanbyaku</i>, <i>roku-hyaku</i> becomes <i>roppyaku</i>. These feel maddening at first but become automatic. Say them aloud rather than memorising rules.'},
+        {'type': 'p', 'text': '<b>Sound changes.</b> Numbers change sound before h- and s-sounds: <i>san-hyaku</i> becomes <i>sanbyaku</i>, <i>roku-hyaku</i> becomes <i>roppyaku</i>, <i>san-sen</i> becomes <i>sanzen</i>, <i>hachi-sen</i> becomes <i>hassen</i>. These feel maddening at first but become automatic. Say them aloud rather than memorising rules.'},
         {'type': 'grammar', 'title': 'はじめまして (hajimemashite)',
          'body': 'The ritual opening of a first-time introduction. Literally &ldquo;for the first time&rdquo;.<br><br><b>Template:</b><br><span class="inline-jp">はじめまして。</span> &nbsp; <i>Hajimemashite.</i> &nbsp; (Nice to meet you.)<br><span class="inline-jp">わたしは [name] です。</span> &nbsp; <i>Watashi wa [name] desu.</i> &nbsp; (I am [name].)<br><span class="inline-jp">[country] から きました。</span> &nbsp; <i>[country] kara kimashita.</i> &nbsp; (I come from [country].)<br><span class="inline-jp">[job] です。</span> &nbsp; <i>[job] desu.</i> &nbsp; (I am a [job].)<br><span class="inline-jp">どうぞ よろしく おねがいします。</span> &nbsp; <i>Douzo yoroshiku onegaishimasu.</i> &nbsp; (Please treat me well.)'},
         {'type': 'vocab', 'title': 'Nationalities, occupations, basics', 'rows': [
@@ -391,6 +397,12 @@ WEEKS.append({
             '<b>Cure Dolly</b> on YouTube — her &ldquo;Japanese from Scratch&rdquo; series is quirky but exceptionally clear on は vs が.',
             '<b>JapanesePod101 — Essential Japanese Questions</b> playlist.',
         ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 6', 'items': [
+            'Can I say what something is and is not: <span class="inline-jp">これは ほんです。</span> / <span class="inline-jp">これは ほんじゃないです。</span>?',
+            'Can I turn a statement into a question with <span class="inline-jp">か</span>, and answer it with はい or いいえ?',
+            'Can I use これ / それ / あれ and この / その / あの correctly for things near me, near you, and far away?',
+            'Can I explain in one sentence why <span class="inline-jp">ねこが います</span> uses が rather than は?',
+        ]},
     ],
 })
 
@@ -450,6 +462,12 @@ WEEKS.append({
             '<b>Japanese Ammo with Misa</b> on YouTube — her particle videos are long but hugely clarifying.',
             '<b>Marugoto Starter</b> (free online courses from the Japan Foundation) — real-life listening practice.',
         ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 7', 'items': [
+            'Can I say where I am going, how, and with whom in one sentence: <span class="inline-jp">ともだちと バスで こうえんに いきます。</span>?',
+            'Can I explain why it is <span class="inline-jp">うちに います</span> but <span class="inline-jp">うちで たべます</span>?',
+            'Can I mark a direct object with を and remember it is pronounced <i>o</i>?',
+            'Can I add も to say &ldquo;me too&rdquo; about something someone else said?',
+        ]},
     ],
 })
 
@@ -467,7 +485,7 @@ WEEKS.append({
         {'type': 'h2', 'text': 'Three verb groups'},
         {'type': 'p', 'text': 'Every Japanese verb falls into one of three groups. Which group it&rsquo;s in determines how you conjugate it. Beginners should learn the dictionary form and the group together.'},
         {'type': 'h3', 'text': 'Group 1 — Godan verbs (u-verbs)'},
-        {'type': 'p', 'text': 'End in any <i>u</i>-row kana (<b>う, く, す, つ, ぬ, ぶ, む, る</b>). The most common group. To make the ます-form, change the final <i>u</i>-sound to the matching <i>i</i>-sound and add ます.'},
+        {'type': 'p', 'text': 'End in any <i>u</i>-row kana (<b>う, く, ぐ, す, つ, ぬ, ぶ, む, る</b>). The most common group. To make the ます-form, change the final <i>u</i>-sound to the matching <i>i</i>-sound and add ます.'},
         {'type': 'vocab', 'rows': [
             ('かく','kaku','write → かきます (kakimasu)'),
             ('よむ','yomu','read → よみます'),
@@ -529,6 +547,12 @@ WEEKS.append({
             '<b>Tae Kim — Polite Form and Verb Stems</b> — guidetojapanese.org',
             '<b>Japanese with Shun</b> podcast — slow Japanese using lots of ~ます forms.',
             '<b>Tofugu — Japanese Verb Conjugation</b> — tofugu.com/japanese/japanese-verb-conjugation',
+        ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 8', 'items': [
+            'Given a dictionary-form verb, can I say which group it belongs to — including the traps はいる, はしる, かえる?',
+            'Can I turn any verb from this week into its ます and ません forms without hesitating?',
+            'Can I conjugate する and くる correctly?',
+            'Can I describe my morning routine in four or five polite sentences?',
         ]},
     ],
 })
@@ -608,6 +632,12 @@ WEEKS.append({
             '<b>Tofugu — Japanese Adjectives</b> — a thorough reference.',
             '<b>Comprehensible Japanese</b> on YouTube — adjective-heavy beginner videos.',
         ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 9', 'items': [
+            'Can I say what I did and did not do yesterday, using ました and ませんでした?',
+            'Can I give all four forms of an い-adjective — including the irregular <span class="inline-jp">いい → よくない / よかった / よくなかった</span>?',
+            'Can I give all four forms of a な-adjective, and do I remember きれい and ゆうめい are な-adjectives?',
+            'Can I put an adjective in front of a noun correctly: <span class="inline-jp">おおきい いぬ</span> but <span class="inline-jp">しずかな へや</span>?',
+        ]},
     ],
 })
 
@@ -675,6 +705,12 @@ WEEKS.append({
             '<b>Game Gengo</b> on YouTube — a brilliant visual explanation of the te-form.',
             '<b>Renshuu</b> — set a drill for Group 1 te-form conjugation specifically.',
         ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 10', 'items': [
+            'Can I recite the te-form rules for Group 1 verbs from memory, including the いく → いって exception?',
+            'Can I politely ask someone to wait, to repeat something, or to speak slowly, using ~てください?',
+            'Can I say what I am doing right now using ~ています?',
+            'Can I chain three actions in one sentence with the te-form, with only the last verb carrying the tense?',
+        ]},
     ],
 })
 
@@ -698,7 +734,7 @@ WEEKS.append({
             ('くじ','ku-ji','9 o&rsquo;clock (not kyuu-ji)'),
             ('いっぷん','ippun','1 minute'),
             ('じゅっぷん','juppun','10 minutes'),
-            ('はんぶん / はん','hanbun / han','half (as in half past the hour)'),
+            ('はん','han','half past (3じはん = 3:30)'),
             ('ごぜん','gozen','AM / morning'),
             ('ごご','gogo','PM / afternoon'),
             ('ごぜん 7じ','gozen shichi-ji','7:00 AM'),
@@ -736,7 +772,7 @@ WEEKS.append({
             ('じゅういちにち','juu-ichi-nichi','the 11th'),
             ('はつか','hatsuka','the 20th (irregular!)'),
         ]},
-        {'type': 'p', 'text': '<b>Pattern after the 10th:</b> number + にち. Except <b>はつか</b> for the 20th and <b>よっか</b>/<b>ようか</b> flavoured endings on 14, 24. The irregular first ten are old native Japanese counting; they must be memorised. They&rsquo;re everywhere — invites, calendars, holidays — so put the effort in.'},
+        {'type': 'p', 'text': '<b>Pattern after the 10th:</b> number + にち. Except <b>はつか</b> for the 20th, and the 14th and 24th, which reuse <b>よっか</b>: <b>じゅうよっか</b>, <b>にじゅうよっか</b>. The irregular first ten are old native Japanese counting; they must be memorised. They&rsquo;re everywhere — invites, calendars, holidays — so put the effort in.'},
         {'type': 'h2', 'text': 'Counters: counting objects'},
         {'type': 'p', 'text': 'When counting objects in Japanese, you don&rsquo;t just say &ldquo;three book&rdquo;; you say &ldquo;book, three-[counter]&rdquo;. The counter depends on the shape or category of the thing being counted. Beginners need five or six to start.'},
         {'type': 'vocab', 'rows': [
@@ -763,6 +799,12 @@ WEEKS.append({
             '<b>Tofugu — Japanese Counters</b> — tofugu.com/japanese/japanese-counters',
             '<b>JapanesePod101 — Days, Months, Dates</b> playlist.',
             '<b>Jisho.org</b> — look up any word; it will show the appropriate counter.',
+        ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 11', 'items': [
+            'Can I tell the time, including the irregular ones: <span class="inline-jp">よじ</span>, <span class="inline-jp">しちじ</span>, <span class="inline-jp">くじ</span>, and <span class="inline-jp">〜じはん</span>?',
+            'Can I say today&rsquo;s date — month and day — even when the day is one of the irregular 1st–10th?',
+            'Can I count things using ～つ, ～にん, ～ほん, ～まい and ～ひき, including ひとり and ふたり?',
+            'Can I suggest a meeting time: <span class="inline-jp">らいしゅうの きんようびに あいましょう。</span>?',
         ]},
     ],
 })
@@ -802,12 +844,12 @@ WEEKS.append({
             ('六','six','roku — 六本 (roppon)'),
             ('七','seven','nana / shichi — 七時'),
             ('八','eight','hachi — 八月'),
-            ('九','nine','kyuu / ku — 九日'),
+            ('九','nine','kyuu / ku — 九時 (kuji), 九月 (kugatsu)'),
             ('十','ten','juu — 十人'),
         ]},
         {'type': 'h3', 'text': 'Days, time, calendar (10)'},
         {'type': 'kanji-grid', 'startAt': 11, 'items': [
-            ('日','day / sun','hi / nichi — 日曜日, 今日'),
+            ('日','day / sun','hi / nichi — 日曜日; 今日 (kyou) is a special reading'),
             ('月','moon / month','tsuki / getsu — 月曜日, 一月'),
             ('火','fire','hi / ka — 火曜日'),
             ('水','water','mizu / sui — 水曜日'),
@@ -837,7 +879,7 @@ WEEKS.append({
             ('小','small','chii / shou — 小さい'),
             ('中','middle / inside','naka / chuu — 中国'),
             ('上','above / up','ue / jou — 上手'),
-            ('下','below / down','shita / ka — 下さい'),
+            ('下','below / down','shita / ka — 地下 (chika); also kuda- in 下さい'),
             ('前','before / in front','mae / zen — 名前'),
             ('後','after / behind','ushiro / go — 午後'),
             ('外','outside','soto / gai — 外国'),
@@ -868,6 +910,12 @@ WEEKS.append({
             '<b>WaniKani</b> — paid but worth it; teaches radicals → kanji → vocab in order.',
             '<b>Kanji Study</b> (Android) — free, excellent kanji practice app.',
             '<b>Jisho.org</b> — look up any kanji by radical, meaning, or stroke count.',
+        ]},
+        {'type': 'selfcheck', 'title': 'Self-check before Week 12', 'items': [
+            'Shown any of the 50 kanji from this week, can I give its meaning in under three seconds?',
+            'Can I explain the difference between on&rsquo;yomi and kun&rsquo;yomi using <span class="inline-jp">水</span> as the example?',
+            'Can I read aloud: <span class="inline-jp">日本人、火曜日、先生、山、大学、右手</span>?',
+            'Can I write at least half of the 50 kanji from memory with correct stroke order?',
         ]},
     ],
 })
@@ -918,7 +966,7 @@ WEEKS.append({
             ('天','heaven / weather','ten — 天気'),
             ('魚','fish','sakana / gyo'),
             ('犬','dog','inu / ken'),
-            ('入','enter','iru / nyuu — 入ります, 入口'),
+            ('入','enter','hairu / iru / nyuu — 入ります (hairimasu), 入口 (iriguchi)'),
             ('出','exit','deru / shutsu — 出口'),
             ('休','rest','yasumu / kyuu — 休みます'),
             ('立','stand','tatsu / ritsu — 立ちます'),
@@ -988,7 +1036,13 @@ WEEKS.append({
             '<b>Italki</b> — one-on-one tutor lessons starting around $10/hour.',
             '<b>Terrace House</b> on Netflix — natural, slow-paced Japanese conversation. Watch with Japanese subtitles.',
         ]},
+        {'type': 'selfcheck', 'title': 'Final self-check', 'items': [
+            'Can I write most of the 100 kanji from memory, and read all of them?',
+            'Can I read the passage above aloud and understand it without looking at the translation?',
+            'Can I introduce myself for one minute — name, country, job, daily routine, likes — without stopping?',
+            'Have I chosen my next step: a textbook, a reading habit, a tutor, or the JLPT N5?',
+        ]},
         {'type': 'h2', 'text': 'A note at the end'},
-        {'type': 'p', 'text': 'If you&rsquo;ve done the work in these twelve weeks, you&rsquo;ve done something small Japanese children spend six years on. Be patient with yourself. The next twelve weeks will feel slower than these — not because you&rsquo;re learning less, but because the easy wins (two scripts, basic grammar, your first 500 words) are behind you. The payoff is bigger: real conversations, real reading, a second mind forming in a second language.<br><br><b>がんばってください。</b> &nbsp; <i>Ganbatte kudasai.</i> &nbsp; (Please do your best.)'},
+        {'type': 'p', 'text': 'If you&rsquo;ve done the work in these twelve weeks, you&rsquo;ve done something small Japanese children spend six years on. Be patient with yourself. The next twelve weeks will feel slower than these — not because you&rsquo;re learning less, but because the easy wins (two scripts, basic grammar, your first few hundred words) are behind you. The payoff is bigger: real conversations, real reading, a second mind forming in a second language.<br><br><b>がんばってください。</b> &nbsp; <i>Ganbatte kudasai.</i> &nbsp; (Please do your best.)'},
     ],
 })

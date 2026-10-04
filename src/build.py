@@ -617,9 +617,9 @@ function speak(text, cb) {
 function esc(s) {
     return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-// Allow a tiny subset of markup through our data strings: <b>, <i>, <br>.
-// Keep user-provided <font>-stripping consistent with the PDF content which
-// occasionally wraps Japanese chunks in <font name="..."> for ReportLab.
+// Content strings are authored HTML (entities, <b>, <i>, <span>, <br>) and are
+// trusted. Every content string must go through this into innerHTML — inserting
+// one as a text node shows entities like &rsquo; literally.
 function richText(s) {
     s = String(s || '');
     s = s.replace(/<font[^>]*>/g, '').replace(/<\/font>/g, '');
@@ -672,7 +672,7 @@ function render() {
     else main.appendChild(renderWelcome());
     // Mobile header title update
     const mt = document.getElementById('mobile-title');
-    if (mt) mt.textContent = currentViewLabel();
+    if (mt) mt.innerHTML = richText(currentViewLabel());
 }
 
 function currentViewLabel() {
@@ -718,7 +718,7 @@ function navItem(id, label, num, status) {
         : null;
     return el('a', {class: 'item' + active, onclick: () => go(id)},
         num ? el('span', {class: 'num'}, num) : null,
-        el('span', {class: 'label'}, label),
+        el('span', {class: 'label', html: richText(label)}),
         statusEl
     );
 }
@@ -755,7 +755,7 @@ function renderResources() {
     main.appendChild(el('hr', {class: 'divider'}));
     main.appendChild(el('p', {class: 'lead'}, 'Keep this page bookmarked. These are the free, high-quality references you\u2019ll return to all twelve weeks.'));
     COURSE.resources.forEach(group => {
-        main.appendChild(el('h2', {}, group.title));
+        main.appendChild(el('h2', {html: richText(group.title)}));
         const ul = el('ul', {});
         group.items.forEach(it => ul.appendChild(el('li', {html: richText(it)})));
         main.appendChild(ul);
@@ -775,7 +775,7 @@ function renderWeek(num) {
     if (!state.weekStatus[num]) { state.weekStatus[num] = 'started'; saveState(); }
     const main = el('div', {});
     main.appendChild(el('div', {class: 'week-marker'}, 'Week ' + num));
-    main.appendChild(el('h1', {}, week.title));
+    main.appendChild(el('h1', {html: richText(week.title)}));
     main.appendChild(el('hr', {class: 'divider'}));
     main.appendChild(el('div', {class: 'goals'},
         el('h3', {}, 'Goals this week'),
@@ -799,15 +799,15 @@ function renderSection(section, keyBase, weekNum) {
         case 'vocab': return renderVocab(section, keyBase, weekNum);
         case 'kana': return renderKanaGrid(section);
         case 'grammar': return el('div', {class: 'box grammar'},
-            section.title ? el('div', {class: 'box-title'}, section.title) : null,
+            section.title ? el('div', {class: 'box-title', html: richText(section.title)}) : null,
             el('div', {html: richText(section.body)})
         );
         case 'exercise': return el('div', {class: 'box exercise'},
-            el('div', {class: 'box-title'}, section.title || 'Exercises'),
+            el('div', {class: 'box-title', html: richText(section.title || 'Exercises')}),
             el('ol', {}, ...section.items.map(it => el('li', {html: richText(it)})))
         );
         case 'resource': return el('div', {class: 'box resource'},
-            el('div', {class: 'box-title'}, section.title || 'Resources this week'),
+            el('div', {class: 'box-title', html: richText(section.title || 'Resources this week')}),
             el('ul', {}, ...section.items.map(it => el('li', {html: richText(it)})))
         );
         case 'reading': return el('div', {class: 'reading inline-jp', html: richText(section.text)});
@@ -815,7 +815,7 @@ function renderSection(section, keyBase, weekNum) {
         case 'table': return renderPlainTable(section);
         case 'selfcheck': {
             const wrap = el('div', {});
-            wrap.appendChild(el('h2', {}, section.title || 'Self-check'));
+            wrap.appendChild(el('h2', {html: richText(section.title || 'Self-check')}));
             wrap.appendChild(el('ul', {}, ...section.items.map(it => el('li', {html: richText(it)}))));
             if (section.note) wrap.appendChild(el('p', {class: 'lead', style: 'font-size: 14px; font-style: italic;', html: richText(section.note)}));
             return wrap;
@@ -837,12 +837,12 @@ function renderVocab(section, keyBase, weekNum) {
     const knownNow = knownKeys.filter(k => state.knownVocab[k]).length;
     toolbar.appendChild(el('span', {class: 'count'}, knownNow + ' / ' + section.rows.length + ' known'));
     wrap.appendChild(toolbar);
-    if (section.title) wrap.appendChild(el('h3', {}, section.title));
+    if (section.title) wrap.appendChild(el('h3', {html: richText(section.title)}));
     const table = el('table', {class: 'vocab' + (state.hideEn ? ' hide-en' : '') + (state.hideRoma ? ' hide-pr' : '')});
     const thead = el('tr', {class: 'header'},
-        el('th', {}, section.cols && section.cols[0] || 'Japanese'),
-        el('th', {}, section.cols && section.cols[1] || 'Reading'),
-        el('th', {}, section.cols && section.cols[2] || 'English'),
+        el('th', {html: richText(section.cols && section.cols[0] || 'Japanese')}),
+        el('th', {html: richText(section.cols && section.cols[1] || 'Reading')}),
+        el('th', {html: richText(section.cols && section.cols[2] || 'English')}),
         el('th', {})
     );
     table.appendChild(thead);
@@ -850,9 +850,9 @@ function renderVocab(section, keyBase, weekNum) {
         const key = keyBase + '-v' + i;
         const known = !!state.knownVocab[key];
         const tr = el('tr', {class: known ? 'known' : ''},
-            el('td', {class: 'jp-cell inline-jp'}, row[0]),
-            el('td', {class: 'pr', onclick: ev => ev.target.classList.toggle('revealed')}, row[1]),
-            el('td', {class: 'en', onclick: ev => ev.target.classList.toggle('revealed')}, row[2]),
+            el('td', {class: 'jp-cell inline-jp', html: richText(row[0])}),
+            el('td', {class: 'pr', html: richText(row[1]), onclick: ev => ev.currentTarget.classList.toggle('revealed')}),
+            el('td', {class: 'en', html: richText(row[2]), onclick: ev => ev.currentTarget.classList.toggle('revealed')}),
             el('td', {class: 'actions'},
                 el('button', {class: 'row-btn', title: 'Play audio', onclick: ev => playFromRow(ev.currentTarget, row[0])},
                     svgSpeaker()),
@@ -901,7 +901,7 @@ function svgStar() {
 
 function renderKanaGrid(section) {
     const wrap = el('div', {});
-    if (section.title) wrap.appendChild(el('h3', {}, section.title));
+    if (section.title) wrap.appendChild(el('h3', {html: richText(section.title)}));
     const toolbar = el('div', {class: 'vocab-toolbar'},
         el('button', {class: 'btn', onclick: ev => ev.currentTarget.parentElement.nextElementSibling.classList.toggle('hide-roma')}, 'Hide readings')
     );
@@ -913,8 +913,8 @@ function renderKanaGrid(section) {
             else {
                 const [g, r] = cell;
                 const c = el('div', {class: 'kana-cell', onclick: ev => playFromRow(ev.currentTarget, g)},
-                    el('div', {class: 'glyph'}, g),
-                    el('div', {class: 'roma'}, r)
+                    el('div', {class: 'glyph', html: richText(g)}),
+                    el('div', {class: 'roma', html: richText(r)})
                 );
                 grid.appendChild(c);
             }
@@ -926,14 +926,14 @@ function renderKanaGrid(section) {
 
 function renderKanjiGrid(section) {
     const wrap = el('div', {});
-    if (section.title) wrap.appendChild(el('h3', {}, section.title));
+    if (section.title) wrap.appendChild(el('h3', {html: richText(section.title)}));
     const grid = el('div', {class: 'kanji-grid'});
     section.items.forEach((it, idx) => {
         grid.appendChild(el('div', {class: 'kanji-card'},
-            el('div', {class: 'k inline-jp', onclick: () => speak(it[0])}, it[0]),
+            el('div', {class: 'k inline-jp', html: richText(it[0]), onclick: () => speak(it[0])}),
             el('div', {class: 'info'},
                 el('div', {class: 'n'}, '#' + (section.startAt ? section.startAt + idx : idx + 1)),
-                el('div', {class: 'm'}, it[1]),
+                el('div', {class: 'm', html: richText(it[1])}),
                 it[2] ? el('div', {html: richText(it[2])}) : null
             )
         ));
@@ -944,7 +944,7 @@ function renderKanjiGrid(section) {
 
 function renderPlainTable(section) {
     const wrap = el('div', {});
-    if (section.title) wrap.appendChild(el('h3', {}, section.title));
+    if (section.title) wrap.appendChild(el('h3', {html: richText(section.title)}));
     const table = el('table', {class: 'vocab'});
     const headers = section.headers || [];
     if (headers.length) {
@@ -979,7 +979,7 @@ function renderAppendix(id) {
     const a = COURSE.appendices.find(x => x.id === id);
     if (!a) return el('div', {}, 'Not found.');
     const main = el('div', {});
-    main.appendChild(el('h1', {}, a.title));
+    main.appendChild(el('h1', {html: richText(a.title)}));
     main.appendChild(el('hr', {class: 'divider'}));
     if (a.intro) main.appendChild(el('p', {class: 'lead', html: richText(a.intro)}));
     a.sections.forEach((s, i) => main.appendChild(renderSection(s, 'appx-' + id + '-s' + i)));

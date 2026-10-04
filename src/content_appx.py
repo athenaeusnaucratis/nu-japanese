@@ -93,7 +93,7 @@ _K51_100 = [
     ('市','city','ichi/shi'),('国','country','kuni/koku'),('車','car','kuruma/sha'),('電','electricity','den'),('気','spirit/air','ki'),
     # Nature 71-80
     ('花','flower','hana/ka'),('空','sky','sora/kuu'),('雨','rain','ame/u'),('天','heaven/weather','ten'),('魚','fish','sakana/gyo'),
-    ('犬','dog','inu/ken'),('入','enter','iru/nyuu'),('出','exit','deru/shutsu'),('休','rest','yasumu/kyuu'),('立','stand','tatsu/ritsu'),
+    ('犬','dog','inu/ken'),('入','enter','hairu/iru/nyuu'),('出','exit','deru/shutsu'),('休','rest','yasumu/kyuu'),('立','stand','tatsu/ritsu'),
     # Study 81-90
     ('学','learn','manabu/gaku'),('校','school','kou'),('高','high/expensive','takai/kou'),('英','English','ei'),('語','language','kataru/go'),
     ('本','book/origin','hon/moto'),('文','sentence','bun'),('字','character','ji'),('今','now','ima/kon'),('半','half','han'),
