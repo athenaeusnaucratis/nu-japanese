@@ -209,6 +209,7 @@ main.content {
 
 /* Mobile */
 .menu-btn, .mobile-header { display: none; }
+.scrim { display: none; }
 @media (max-width: 820px) {
     .app { grid-template-columns: 1fr; }
     nav.sidebar {
@@ -226,6 +227,7 @@ main.content {
     }
     nav.sidebar.open { transform: translateX(0); }
     .scrim {
+        display: block;
         position: fixed; inset: 0;
         background: rgba(0,0,0,0.45);
         z-index: 15;
