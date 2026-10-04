@@ -118,7 +118,7 @@ backup written, `knownVocab` kept), dashboard 2 / 431, speech text にほんじ�
 storage untouched after real reload + two week visits, notice shown; no console
 errors. **Merged to `main` on the user's go (2026-10-04).**
 
-### Round B1, batch 1 — in flight (branch `round-b1-hiragana`)
+### Round B1, batch 1 — done (branch `round-b1-hiragana`)
 Detail sheet + 46 hiragana hooks (`src/content_glyphs.py`, built into
 `COURSE.glyphs` by `make_glyphs()` in `build.py`). Tap a kana: plays the sound
 and opens a non-modal sheet (bottom sheet ≤820px, 340px side panel above) with
@@ -127,7 +127,7 @@ Voiced kana link back to their base ("か + ゛"). Katakana cells still play
 sound but open no sheet until batch 2. Tests: `tests/test_glyphs.py`,
 `tests/sheet.test.js` (written first). Checked in Chrome at 375 (light) and
 1024 (dark). Review list for the user: `docs/reviews/b1-hiragana-hooks.md`.
-**Waiting on:** the user's review of the hooks on the preview, then merge.
+**Reviewed and approved by the user; merged to `main` (2026-10-04).**
 
 ## 5. Next — decided, in order
 
