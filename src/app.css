@@ -628,3 +628,98 @@ button.kanji-card.playing { border-color: var(--accent); }
     padding: 20px;
     margin-top: 20px;
 }
+
+/* ---------- Practice: set list ---------- */
+.set-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    text-align: left;
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 0 0 12px;
+    cursor: pointer;
+    font: inherit;
+    color: var(--ink);
+}
+.set-card:hover { background: var(--table-row-alt); }
+.set-card:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.set-card .set-main { flex: 1; }
+.set-card .set-title { font-size: 17px; font-weight: 600; }
+.set-card .set-blurb { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.set-card .set-count {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 4px 10px;
+    white-space: nowrap;
+}
+
+/* ---------- Practice: a card ---------- */
+.practice-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+.practice-progress {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: var(--muted);
+}
+.practice-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 20px 20px;
+    text-align: center;
+}
+.card-prompt { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+.answer-slots {
+    min-height: 52px;
+    font-size: 34px;
+    letter-spacing: 0.08em;
+    border-bottom: 2px dashed var(--rule);
+    padding-bottom: 8px;
+    margin: 0 auto 10px;
+    max-width: 90%;
+    word-break: break-word;
+}
+.card-feedback { min-height: 22px; font-size: 14px; margin-bottom: 14px; }
+.card-feedback.ok { color: var(--resource-head); font-weight: 600; }
+.card-feedback.off { color: var(--grammar-head); }
+.tile-tray {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.tile {
+    min-width: 52px;
+    height: 56px;
+    font-size: 28px;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 0 10px;
+}
+.tile:hover:not(:disabled) { background: var(--table-row-alt); }
+.tile:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.tile:disabled { opacity: 0.25; cursor: default; }
+.practice-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.practice-controls .btn { padding: 10px 18px; font-size: 14px; }
+.practice-actions { display: flex; gap: 10px; margin-top: 18px; }

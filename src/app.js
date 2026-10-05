@@ -6,6 +6,7 @@ let state = {
     view: 'welcome',
     weekStatus: {},     // {1: 'started'|'complete', ...}
     known: {},          // {'v:ねこ|neko': true} — stable vocab IDs (schema 2)
+    practice: {},       // {setId: {answer: 'known'|'learning'}}
     hideEn: false,
     hideRoma: false,
     theme: null,        // null = system, 'light', 'dark'
@@ -160,6 +161,8 @@ function render() {
     const v = state.view;
     if (v === 'welcome' || !v) main.appendChild(renderWelcome());
     else if (v === 'resources') main.appendChild(renderResources());
+    else if (v === 'practice') main.appendChild(renderPracticeHome());
+    else if (v.startsWith('practice-')) main.appendChild(renderPractice(v.slice(9)));
     else if (v.startsWith('week-')) main.appendChild(renderWeek(parseInt(v.slice(5), 10)));
     else if (v.startsWith('appx-')) main.appendChild(renderAppendix(v.slice(5)));
     else main.appendChild(renderWelcome());
@@ -172,6 +175,11 @@ function currentViewLabel() {
     const v = state.view;
     if (v === 'welcome') return 'Welcome';
     if (v === 'resources') return 'Resources';
+    if (v === 'practice') return 'Practice';
+    if (v.startsWith('practice-')) {
+        const st = COURSE.practiceSets.find(x => x.id === v.slice(9));
+        return st ? st.title : 'Practice';
+    }
     if (v.startsWith('week-')) return 'Week ' + v.slice(5);
     if (v.startsWith('appx-')) {
         const a = COURSE.appendices.find(x => x.id === v.slice(5));
@@ -189,6 +197,7 @@ function renderNav() {
         el('p', {class: 'sub'}, COURSE.subtitle)
     ));
     nav.appendChild(navItem('welcome', 'Welcome', ''));
+    nav.appendChild(navItem('practice', 'Practice', ''));
     nav.appendChild(navItem('resources', 'Resources', ''));
     nav.appendChild(el('div', {class: 'section-label'}, 'Weeks'));
     COURSE.weeks.forEach(w => {
@@ -607,12 +616,181 @@ function toggleTheme() {
     saveState();
 }
 function resetProgress() {
-    if (!confirm('Reset all progress? This clears which weeks are complete and which vocabulary you\u2019ve marked known.')) return;
+    if (!confirm('Reset all progress? This clears which weeks are complete, which vocabulary you\u2019ve marked known, and your practice.')) return;
     state.weekStatus = {};
     state.known = {};
+    state.practice = {};
     saveState();
     render();
 }
+
+// =================== Practice (tap-to-build recall) ===================
+// Answer-checking: name the Japanese-specific slip, kindly. Pure + exported.
+const SMALL_KANA = {'\u3041':'\u3042','\u3043':'\u3044','\u3045':'\u3046','\u3047':'\u3048','\u3049':'\u304a','\u3083':'\u3084','\u3085':'\u3086','\u3087':'\u3088','\u3063':'\u3064','\u308e':'\u308f',
+    '\u30a1':'\u30a2','\u30a3':'\u30a4','\u30a5':'\u30a6','\u30a7':'\u30a8','\u30a9':'\u30aa','\u30e3':'\u30e4','\u30e5':'\u30e6','\u30e7':'\u30e8','\u30c3':'\u30c4','\u30ee':'\u30ef'};
+function stripMarks(s) {
+    return [...s].map(ch => (COURSE.glyphs[ch] && COURSE.glyphs[ch].base) || ch).join('');
+}
+function normSmall(s) {
+    return [...s].map(ch => SMALL_KANA[ch] || ch).join('');
+}
+function checkAnswer(built, answer) {
+    if (built === answer) return 'correct';
+    if (stripMarks(built) === stripMarks(answer)) return 'dakuten';
+    if (normSmall(built) === normSmall(answer)) return 'small-kana';
+    if (answer.includes('\u30fc') && built.replace(/\u30fc/g, '') === answer.replace(/\u30fc/g, '')) return 'long-vowel';
+    if ([...built].length < [...answer].length) return 'short';
+    return 'wrong';
+}
+const FEEDBACK = {
+    correct: '\u2713 Nice.',
+    dakuten: '\u261d So close \u2014 check the dakuten / handakuten (\u309b \u309c).',
+    'small-kana': '\u261d Nearly \u2014 one of those should be a small kana.',
+    'long-vowel': '\u261d Almost \u2014 you dropped the long-vowel mark \u30fc.',
+    short: '\u261d A kana or two short. Keep going.',
+    wrong: '\u261d Not quite \u2014 try again, or reveal it.',
+};
+
+// --- session state (in-memory; per-item result is persisted to state.practice) ---
+let P = null;   // {setId, queue:[item...], i, built:[], done, revealed}
+
+function practiceRecord(setId, answer, status) {
+    if (!state.practice) state.practice = {};
+    if (!state.practice[setId]) state.practice[setId] = {};
+    state.practice[setId][answer] = status;
+    saveState();
+}
+
+function startPractice(setId) {
+    const set = COURSE.practiceSets.find(s => s.id === setId);
+    if (!set) return;
+    // New/learning first, known last \u2014 but everything is included.
+    const prog = (state.practice && state.practice[setId]) || {};
+    const order = set.items.slice().sort((a, b) =>
+        (prog[a.answer] === 'known' ? 1 : 0) - (prog[b.answer] === 'known' ? 1 : 0));
+    P = {setId: setId, title: set.title, total: set.items.length, queue: order, i: 0, built: [], done: 0, revealed: false};
+}
+
+function practiceCurrentItem() { return P && P.queue[P.i]; }
+function practiceCurrentAnswer() { const it = practiceCurrentItem(); return it ? it.answer : ''; }
+
+// Tiles: the answer's kana (as a multiset) plus a few plausible decoys drawn
+// from look-alikes and dakuten partners, shuffled.
+function makeTiles(answer) {
+    const chars = [...answer];
+    const have = new Set(chars);
+    const pool = [];
+    chars.forEach(ch => {
+        const g = COURSE.glyphs[ch];
+        if (g) {
+            (g.looksLike || []).forEach(x => { if (x.length === 1 && !have.has(x)) pool.push(x); });
+            (g.voiced || []).forEach(x => { if (!have.has(x)) pool.push(x); });
+            if (g.base && !have.has(g.base)) pool.push(g.base);
+        }
+    });
+    const decoys = [];
+    const want = Math.min(4, Math.max(2, Math.round(chars.length / 2)));
+    const uniq = [...new Set(pool)];
+    while (decoys.length < want && uniq.length) decoys.push(uniq.splice(Math.floor(Math.random() * uniq.length), 1)[0]);
+    const tiles = chars.concat(decoys);
+    for (let k = tiles.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [tiles[k], tiles[j]] = [tiles[j], tiles[k]]; }
+    return tiles;
+}
+
+function renderPracticeHome() {
+    const main = el('div', {});
+    main.appendChild(el('h1', {}, 'Practice'));
+    main.appendChild(el('hr', {class: 'divider'}));
+    main.appendChild(el('p', {class: 'lead'}, 'Pick a set and build each word from its kana. No timers, no streaks \u2014 miss as many as you like; the ones you miss just come round again.'));
+    COURSE.practiceSets.forEach(set => {
+        const prog = (state.practice && state.practice[set.id]) || {};
+        const known = set.items.filter(it => prog[it.answer] === 'known').length;
+        main.appendChild(el('button', {class: 'set-card', onclick: () => go('practice-' + set.id)},
+            el('div', {class: 'set-main'},
+                el('div', {class: 'set-title'}, set.title),
+                set.blurb ? el('div', {class: 'set-blurb'}, set.blurb) : null),
+            el('div', {class: 'set-count'}, known + ' / ' + set.items.length)));
+    });
+    return main;
+}
+
+function renderPractice(setId) {
+    if (!P || P.setId !== setId) startPractice(setId);
+    if (!P) return el('div', {}, 'Set not found.');
+    const main = el('div', {class: 'practice'});
+    if (P.i >= P.queue.length) {
+        main.appendChild(el('h1', {}, P.title));
+        main.appendChild(el('hr', {class: 'divider'}));
+        main.appendChild(el('p', {class: 'lead'}, '\u2713 Set complete. Come back any time \u2014 it will remember where you were.'));
+        main.appendChild(el('div', {class: 'practice-actions'},
+            el('button', {class: 'btn primary', onclick: () => { startPractice(setId); render(); }}, 'Go again'),
+            el('button', {class: 'btn', onclick: () => go('practice')}, 'All sets')));
+        P = null;
+        return main;
+    }
+    const item = practiceCurrentItem();
+    main.appendChild(el('div', {class: 'practice-top'},
+        el('button', {class: 'nav-btn', onclick: () => go('practice')}, '\u2190 Sets'),
+        el('span', {class: 'practice-progress'}, P.done + ' / ' + P.total)));
+    const card = el('div', {class: 'practice-card'});
+    card.appendChild(el('div', {class: 'card-prompt', html: richText(item.prompt)}));
+    // answer slots
+    const slots = el('div', {class: 'answer-slots inline-jp'});
+    const paint = () => { slots.textContent = P.built.length ? P.built.join('') : '\u00a0'; };
+    paint();
+    card.appendChild(slots);
+    const feedback = el('div', {class: 'card-feedback'});
+    card.appendChild(feedback);
+    // tiles
+    const tray = el('div', {class: 'tile-tray inline-jp'});
+    const used = [];   // track which tile buttons are spent
+    const tileChars = makeTiles(item.answer);
+    tileChars.forEach(ch => {
+        const t = el('button', {class: 'tile', type: 'button', onclick: () => {
+            if (P.revealed) return;
+            P.built.push(ch); used.push(t); t.disabled = true; paint(); feedback.textContent = '';
+        }}, ch);
+        tray.appendChild(t);
+    });
+    card.appendChild(tray);
+    // controls
+    const back = el('button', {class: 'btn btn-back', type: 'button', onclick: () => {
+        if (P.revealed || !P.built.length) return;
+        P.built.pop(); const t = used.pop(); if (t) t.disabled = false; paint(); feedback.textContent = '';
+    }}, '\u232b Back');
+    const check = el('button', {class: 'btn primary btn-check', type: 'button', onclick: () => {
+        if (P.revealed || !P.built.length) return;
+        const verdict = checkAnswer(P.built.join(''), item.answer);
+        feedback.textContent = FEEDBACK[verdict];
+        feedback.className = 'card-feedback ' + (verdict === 'correct' ? 'ok' : 'off');
+        if (verdict === 'correct') { practiceRecord(setId, item.answer, 'known'); speak(item.answer); showNext(); }
+    }}, 'Check');
+    const reveal = el('button', {class: 'btn btn-reveal', type: 'button', onclick: () => {
+        P.revealed = true; P.built = [...item.answer]; paint();
+        feedback.textContent = 'Answer: ' + item.answer; feedback.className = 'card-feedback';
+        speak(item.answer);
+        practiceRecord(setId, item.answer, 'learning');
+        showNext(true);
+    }}, 'Reveal');
+    const controls = el('div', {class: 'practice-controls'}, back, reveal, check);
+    card.appendChild(controls);
+    main.appendChild(card);
+
+    function showNext(again) {
+        // again=true (revealed) => requeue this item later in the session
+        controls.querySelectorAll('button').forEach(b => b.disabled = true);
+        const next = el('button', {class: 'btn primary btn-next', type: 'button', onclick: () => {
+            if (again) P.queue.push(item); else P.done++;
+            P.i++; P.built = []; P.revealed = false; render();
+        }}, P.i + 1 >= P.queue.length && !again ? 'Finish \u2192' : 'Next \u2192');
+        controls.appendChild(next);
+    }
+    return main;
+}
+
+// --- test hooks (no-ops in normal use) ---
+function practiceMarkAgain() { if (P) { const it = P.queue[P.i]; P.queue.push(it); } }
+function practiceDebugSetBuilt(s) { if (P) { P.built = [...s]; } }
 
 // --------- Mobile nav ---------
 function openNav() {

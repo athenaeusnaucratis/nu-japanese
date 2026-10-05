@@ -22,6 +22,7 @@ from content_weeks import WEEKS
 from content_appx import APPENDICES
 import content_glyphs
 from content_kanji import KANJI
+import content_practice
 
 # Vocab rows that existed before stable IDs and were deliberately removed:
 # the week 9 te-form rules, now a table. Stars on them are dropped silently.
@@ -143,6 +144,15 @@ def make_glyphs():
     return g
 
 
+def make_practice_sets():
+    sets = []
+    for st in content_practice.PRACTICE_SETS:
+        items = [{'id': 'p:' + st['id'] + ':' + answer, 'answer': answer, 'prompt': prompt, 'image': ''}
+                 for answer, prompt in st['items']]
+        sets.append({'id': st['id'], 'title': st['title'], 'blurb': st.get('blurb', ''), 'items': items})
+    return sets
+
+
 def make_course():
     weeks = copy.deepcopy(WEEKS)
     appendices = copy.deepcopy(APPENDICES)
@@ -164,6 +174,8 @@ def make_course():
         'idAliases': _read_json('id_aliases.json'),
         # Detail-sheet data per character (hooks, origins, look-alikes, voicing).
         'glyphs': make_glyphs(),
+        # Tap-to-build practice sets (Round C).
+        'practiceSets': make_practice_sets(),
     }
 
 

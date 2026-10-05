@@ -146,6 +146,19 @@ CC BY-SA 4.0, credited on the Resources page). 英's 央 part was dropped
 because KRADFILE lists 英 without 央's 一 (user may want to override).
 Review list: `docs/reviews/b1-kanji-hooks.md`. **Reviewed and approved; merged to `main` (2026-10-04). Round B1 complete.**
 
+### Round C v1 — in flight (branch `round-c-practice`)
+Tap-to-build recall engine. New `src/content_practice.py` defines named sets;
+first set = **Food & Drink** (29 words). A "Practice" nav item → set list →
+session: English prompt, build the kana by tapping tiles (answer's kana +
+look-alike/dakuten decoys from COURSE.glyphs), Check / Back / Reveal. Feedback
+names the Japanese slip — dakuten, small kana, dropped ー — via `checkAnswer()`
+(pure, tested). Per-word result saved in `state.practice[setId][answer]`
+(new → learning → known), keyed by answer; missed/revealed words requeue within
+the session; no streak/lives/timer. Engine-first: `image` slot reserved, empty.
+Tests first: `tests/test_practice.py`, `tests/practice.test.js`. Checked in
+Chrome 375 (light) + dark; no console errors. **Waiting on:** user review, then
+discuss (images next, roll out to more sets).
+
 ## 5. Next — decided, in order
 
 **Task 1 (cheap insurance, only urgent if Windows tools ever write files here)
