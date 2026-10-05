@@ -190,8 +190,15 @@ test('an image shows on the Build card and is hidden on Recognise', async () => 
 
 test('no image slot when the item has none', async () => {
   const p = await loadPage();
+  p.w.eval('COURSE.practiceSets[0].items[0].image = ""');
   p.go('practice-food');
   assert.equal(p.doc.querySelector('.card-image'), null);
+});
+
+test('the Food set ships with a picture on every item', async () => {
+  const p = await loadPage();
+  const all = p.w.eval('COURSE.practiceSets[0].items.every(it => /^https:\\/\\/res\\.cloudinary\\.com\\//.test(it.image))');
+  assert.equal(all, true);
 });
 
 // ---- decoy variety: wrong answers come from the whole vocabulary ----

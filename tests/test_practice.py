@@ -32,8 +32,13 @@ class PracticeData(unittest.TestCase):
                 with self.subTest(set=s['id'], answer=it['answer']):
                     self.assertTrue(KANA_ONLY.match(it['answer']), 'answer must be kana-only')
                     self.assertTrue(it['prompt'].strip(), 'prompt must be non-empty')
-                    self.assertIn('image', it)          # reserved slot, empty for now
-                    self.assertEqual(it['image'], '')
+                    self.assertIn('image', it)
+                    if it['image']:
+                        self.assertTrue(it['image'].startswith('https://'), 'image must be an https URL')
+
+    def test_food_items_all_have_pictures(self):
+        food = next(s for s in self.sets if s['id'] == 'food')
+        self.assertTrue(all(it['image'].startswith('https://res.cloudinary.com/') for it in food['items']))
 
     def test_item_id_is_stable_and_set_scoped(self):
         food = next(s for s in self.sets if s['id'] == 'food')

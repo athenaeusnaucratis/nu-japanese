@@ -171,7 +171,15 @@ can't give the answer away. Content ships with all 29 image slots EMPTY — the
 user supplies their hand-picked pictures (paste URLs into content_practice.py,
 or give a Cloudinary cloud name to wire fetch-optimised delivery). Full suite
 32 content + 41 UI green; image + decoy variety verified in Chrome.
-**Waiting on:** user's 29 image URLs (or go-ahead to source CC0), then merge.
+**Images done (2026-10-05):** 29 food pictures AI-generated via the Cloudinary
+connector (flux standard) into the user's account, cloud `mqhcplej`, folder
+`nu-japanese/food/<slug>.jpg`; delivered with transform
+`f_auto,q_auto,c_fill,ar_4:3,w_520` (~13 KB each). Wired into
+`content_practice.py` via `_img(slug)`. Reviewed as a contact sheet — all 29
+match. Image-generation add-on: 29 of 50 monthly credits used (21 left);
+overall account ~0.5/25 credits. Full suite 33 content + 42 UI green; baked
+image verified loading in Chrome. **Round C complete. Waiting on:** user's
+final look, then merge.
 
 ## 5. Next — decided, in order
 

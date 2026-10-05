@@ -1,20 +1,27 @@
 # Practice sets for the tap-to-build recall engine (Round C).
 #
-# Each item is (answer, prompt): `answer` is the kana the learner builds by
-# tapping tiles; `prompt` is the English shown. An item links to a course vocab
-# word by sharing its reading, but the answer is stated here so a slashed row
-# like "ぎゅうにゅう / ミルク" has one clear thing to build.
+# Each item is (answer, prompt) or (answer, prompt, image_url): `answer` is the
+# kana the learner builds by tapping tiles; `prompt` is the English shown;
+# `image_url` is an optional picture.
 #
 # Keep answers kana-only (hiragana/katakana, ー ゛ ゜ included) — no kanji, no
 # latin — so every answer can be built from tiles. tests/test_practice.py checks
 # this.
 #
-# To add a picture to a word, make its tuple (answer, prompt, image_url):
-#     ('すし', 'sushi', 'https://res.cloudinary.com/<cloud>/image/upload/.../sushi.jpg'),
-# Any https image URL works (Cloudinary, your own host, etc.). Leave it a
-# 2-tuple for no image. The picture shows only on the "Build" card (English +
-# picture → make the Japanese); the "Recognise" card hides it so it can't give
-# the answer away.
+# The pictures are AI-generated and stored in the project's Cloudinary
+# (cloud "mqhcplej", folder nu-japanese/food/). The delivery URL carries the
+# transform f_auto,q_auto,c_fill,ar_4:3,w_520, so each one arrives as a small,
+# correctly-cropped WebP/JPEG. To replace a picture, regenerate or upload under
+# the same public_id, or point the tuple at any other https URL. The picture
+# shows only on the "Build" card; the "Recognise" card hides it.
+
+_CLOUD = ('https://res.cloudinary.com/mqhcplej/image/upload/'
+          'f_auto,q_auto,c_fill,ar_4:3,w_520/nu-japanese/food/')
+
+
+def _img(slug):
+    return _CLOUD + slug + '.jpg'
+
 
 PRACTICE_SETS = [
     {
@@ -22,35 +29,35 @@ PRACTICE_SETS = [
         'title': 'Food & Drink',
         'blurb': 'Everyday words for what’s on the table — build each one from the tiles.',
         'items': [
-            ('ごはん', 'rice; a cooked meal'),
-            ('あさごはん', 'breakfast'),
-            ('ひるごはん', 'lunch'),
-            ('ばんごはん', 'dinner'),
-            ('パン', 'bread'),
-            ('みず', 'water'),
-            ('おちゃ', 'green tea'),
-            ('コーヒー', 'coffee'),
-            ('ビール', 'beer'),
-            ('おさけ', 'sake; alcohol'),
-            ('ぎゅうにゅう', 'milk'),
-            ('ジュース', 'juice'),
-            ('ワイン', 'wine'),
-            ('くだもの', 'fruit'),
-            ('やさい', 'vegetables'),
-            ('にく', 'meat'),
-            ('さかな', 'fish (to eat)'),
-            ('たまご', 'egg'),
-            ('チーズ', 'cheese'),
-            ('バター', 'butter'),
-            ('ピザ', 'pizza'),
-            ('ケーキ', 'cake'),
-            ('アイスクリーム', 'ice cream'),
-            ('すし', 'sushi'),
-            ('ラーメン', 'ramen'),
-            ('うどん', 'udon noodles'),
-            ('そば', 'soba noodles'),
-            ('てんぷら', 'tempura'),
-            ('カレー', 'curry'),
+            ('ごはん', 'rice; a cooked meal', _img('gohan')),
+            ('あさごはん', 'breakfast', _img('asagohan')),
+            ('ひるごはん', 'lunch', _img('hirugohan')),
+            ('ばんごはん', 'dinner', _img('bangohan')),
+            ('パン', 'bread', _img('pan')),
+            ('みず', 'water', _img('mizu')),
+            ('おちゃ', 'green tea', _img('ocha')),
+            ('コーヒー', 'coffee', _img('koohii')),
+            ('ビール', 'beer', _img('biiru')),
+            ('おさけ', 'sake; alcohol', _img('osake')),
+            ('ぎゅうにゅう', 'milk', _img('gyuunyuu')),
+            ('ジュース', 'juice', _img('juusu')),
+            ('ワイン', 'wine', _img('wain')),
+            ('くだもの', 'fruit', _img('kudamono')),
+            ('やさい', 'vegetables', _img('yasai')),
+            ('にく', 'meat', _img('niku')),
+            ('さかな', 'fish (to eat)', _img('sakana')),
+            ('たまご', 'egg', _img('tamago')),
+            ('チーズ', 'cheese', _img('chiizu')),
+            ('バター', 'butter', _img('bataa')),
+            ('ピザ', 'pizza', _img('piza')),
+            ('ケーキ', 'cake', _img('keeki')),
+            ('アイスクリーム', 'ice cream', _img('aisukuriimu')),
+            ('すし', 'sushi', _img('sushi')),
+            ('ラーメン', 'ramen', _img('raamen')),
+            ('うどん', 'udon noodles', _img('udon')),
+            ('そば', 'soba noodles', _img('soba')),
+            ('てんぷら', 'tempura', _img('tenpura')),
+            ('カレー', 'curry', _img('karee')),
         ],
     },
 ]
