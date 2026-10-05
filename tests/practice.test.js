@@ -116,3 +116,59 @@ test('no streak, lives, timer or points anywhere in practice', async () => {
   p.go('practice-food');
   assert.doesNotMatch(p.text().toLowerCase(), /streak|lives|\btimer\b|points|score|xp\b/);
 });
+
+// ---- reverse card: recognise the meaning ----
+const modeBtn = (p, m) => p.doc.querySelector('.mode-' + m);
+
+test('recognise mode shows the Japanese + audio and four English choices', async () => {
+  const p = await loadPage();
+  p.go('practice-food');
+  modeBtn(p, 'recognise').click();
+  const card = p.w.eval('practiceCurrentCard()');
+  assert.equal(card.mode, 'recognise');
+  assert.match(p.doc.querySelector('.card-jp').textContent, new RegExp(card.answer));
+  assert.ok(p.doc.querySelector('.card-jp button[title="Play audio"]'));
+  const opts = [...p.doc.querySelectorAll('.option')];
+  assert.equal(opts.length, 4);
+  assert.equal(opts.filter(o => o.textContent === card.prompt).length, 1);
+});
+
+test('choosing the right meaning records known and advances', async () => {
+  const p = await loadPage();
+  p.go('practice-food');
+  modeBtn(p, 'recognise').click();
+  const card = p.w.eval('practiceCurrentCard()');
+  [...p.doc.querySelectorAll('.option')].find(o => o.textContent === card.prompt).click();
+  assert.match(p.doc.querySelector('.card-feedback').textContent, /nice|✓/i);
+  assert.equal(JSON.parse(p.stored()).practice.food[card.answer], 'known');
+  assert.ok(p.doc.querySelector('.btn-next'));
+});
+
+test('choosing a wrong meaning gives feedback and does not advance', async () => {
+  const p = await loadPage();
+  p.go('practice-food');
+  modeBtn(p, 'recognise').click();
+  const card = p.w.eval('practiceCurrentCard()');
+  const wrong = [...p.doc.querySelectorAll('.option')].find(o => o.textContent !== card.prompt);
+  wrong.click();
+  assert.match(p.doc.querySelector('.card-feedback').textContent, /not that one/i);
+  assert.equal(p.doc.querySelector('.btn-next'), null);
+  assert.equal(card.answer in (JSON.parse(p.stored()).practice.food || {}), false);
+});
+
+test('recognise reveal shows the English and marks learning', async () => {
+  const p = await loadPage();
+  p.go('practice-food');
+  modeBtn(p, 'recognise').click();
+  const card = p.w.eval('practiceCurrentCard()');
+  p.doc.querySelector('.btn-reveal').click();
+  assert.match(p.doc.querySelector('.card-feedback').textContent, new RegExp(card.prompt.split(';')[0]));
+  assert.equal(JSON.parse(p.stored()).practice.food[card.answer], 'learning');
+});
+
+test('switching to recognise shows no kana tiles', async () => {
+  const p = await loadPage();
+  p.go('practice-food');
+  modeBtn(p, 'recognise').click();
+  assert.equal(p.doc.querySelector('.tile-tray'), null);
+});

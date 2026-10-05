@@ -661,18 +661,32 @@ function practiceRecord(setId, answer, status) {
     saveState();
 }
 
-function startPractice(setId) {
+function startPractice(setId, mode) {
     const set = COURSE.practiceSets.find(s => s.id === setId);
     if (!set) return;
     // New/learning first, known last \u2014 but everything is included.
     const prog = (state.practice && state.practice[setId]) || {};
     const order = set.items.slice().sort((a, b) =>
         (prog[a.answer] === 'known' ? 1 : 0) - (prog[b.answer] === 'known' ? 1 : 0));
-    P = {setId: setId, title: set.title, total: set.items.length, queue: order, i: 0, built: [], done: 0, revealed: false};
+    // 'build' = see English, build the Japanese. 'recognise' = see/hear the
+    // Japanese, choose the English.
+    P = {setId: setId, title: set.title, total: set.items.length, mode: mode || 'build',
+         items: set.items, queue: order, i: 0, built: [], done: 0, revealed: false};
 }
 
 function practiceCurrentItem() { return P && P.queue[P.i]; }
 function practiceCurrentAnswer() { const it = practiceCurrentItem(); return it ? it.answer : ''; }
+function practiceCurrentCard() { const it = practiceCurrentItem(); return it ? {mode: P.mode, answer: it.answer, prompt: it.prompt} : null; }
+
+// For the recognise card: the right English plus three decoy meanings from the
+// same set, shuffled.
+function meaningOptions(item) {
+    const others = P.items.filter(x => x.prompt !== item.prompt).map(x => x.prompt);
+    for (let k = others.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [others[k], others[j]] = [others[j], others[k]]; }
+    const opts = [item.prompt].concat(others.slice(0, 3));
+    for (let k = opts.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [opts[k], opts[j]] = [opts[j], opts[k]]; }
+    return opts;
+}
 
 // Tiles: the answer's kana (as a multiset) plus a few plausible decoys drawn
 // from look-alikes and dakuten partners, shuffled.
@@ -729,19 +743,66 @@ function renderPractice(setId) {
         return main;
     }
     const item = practiceCurrentItem();
+    const switchMode = m => { if (P.mode !== m) { startPractice(setId, m); render(); } };
     main.appendChild(el('div', {class: 'practice-top'},
         el('button', {class: 'nav-btn', onclick: () => go('practice')}, '\u2190 Sets'),
+        el('div', {class: 'mode-switch'},
+            el('button', {class: 'mode-build' + (P.mode === 'build' ? ' active' : ''), type: 'button',
+                onclick: () => switchMode('build')}, 'Build'),
+            el('button', {class: 'mode-recognise' + (P.mode === 'recognise' ? ' active' : ''), type: 'button',
+                onclick: () => switchMode('recognise')}, 'Recognise')),
         el('span', {class: 'practice-progress'}, P.done + ' / ' + P.total)));
     const card = el('div', {class: 'practice-card'});
+    const feedback = el('div', {class: 'card-feedback'});
+    const controls = el('div', {class: 'practice-controls'});
+
+    if (P.mode === 'recognise') {
+        // See/hear the Japanese, choose the English.
+        card.appendChild(el('div', {class: 'card-jp inline-jp'}, item.answer,
+            el('button', {class: 'row-btn', type: 'button', title: 'Play audio',
+                onclick: ev => playFromRow(ev.currentTarget, item.answer)}, svgSpeaker())));
+        card.appendChild(el('div', {class: 'card-sub'}, 'What does this mean?'));
+        card.appendChild(feedback);
+        const opts = el('div', {class: 'option-list'});
+        let answered = false;
+        meaningOptions(item).forEach(text => {
+            const o = el('button', {class: 'btn option', type: 'button', onclick: ev => {
+                if (answered || P.revealed) return;
+                if (text === item.prompt) {
+                    answered = true;
+                    opts.querySelectorAll('.option').forEach(b => b.disabled = true);
+                    ev.currentTarget.classList.add('right');
+                    feedback.textContent = FEEDBACK.correct; feedback.className = 'card-feedback ok';
+                    practiceRecord(setId, item.answer, 'known'); speak(item.answer); showNext();
+                } else {
+                    ev.currentTarget.classList.add('wrong'); ev.currentTarget.disabled = true;
+                    feedback.textContent = '\u261d Not that one \u2014 try again, or reveal.'; feedback.className = 'card-feedback off';
+                }
+            }}, text);
+            opts.appendChild(o);
+        });
+        card.appendChild(opts);
+        const reveal = el('button', {class: 'btn btn-reveal', type: 'button', onclick: () => {
+            if (answered) return;
+            P.revealed = true;
+            opts.querySelectorAll('.option').forEach(b => { b.disabled = true; if (b.textContent === item.prompt) b.classList.add('right'); });
+            feedback.textContent = 'Answer: ' + item.prompt; feedback.className = 'card-feedback';
+            practiceRecord(setId, item.answer, 'learning');
+            showNext(true);
+        }}, 'Reveal');
+        controls.appendChild(reveal);
+        card.appendChild(controls);
+        main.appendChild(card);
+        return main;
+    }
+
+    // Build mode: see English, build the Japanese from tiles.
     card.appendChild(el('div', {class: 'card-prompt', html: richText(item.prompt)}));
-    // answer slots
     const slots = el('div', {class: 'answer-slots inline-jp'});
     const paint = () => { slots.textContent = P.built.length ? P.built.join('') : '\u00a0'; };
     paint();
     card.appendChild(slots);
-    const feedback = el('div', {class: 'card-feedback'});
     card.appendChild(feedback);
-    // tiles
     const tray = el('div', {class: 'tile-tray inline-jp'});
     const used = [];   // track which tile buttons are spent
     const tileChars = makeTiles(item.answer);
@@ -753,7 +814,6 @@ function renderPractice(setId) {
         tray.appendChild(t);
     });
     card.appendChild(tray);
-    // controls
     const back = el('button', {class: 'btn btn-back', type: 'button', onclick: () => {
         if (P.revealed || !P.built.length) return;
         P.built.pop(); const t = used.pop(); if (t) t.disabled = false; paint(); feedback.textContent = '';
@@ -772,7 +832,7 @@ function renderPractice(setId) {
         practiceRecord(setId, item.answer, 'learning');
         showNext(true);
     }}, 'Reveal');
-    const controls = el('div', {class: 'practice-controls'}, back, reveal, check);
+    controls.appendChild(back); controls.appendChild(reveal); controls.appendChild(check);
     card.appendChild(controls);
     main.appendChild(card);
 

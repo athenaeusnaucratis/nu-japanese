@@ -156,8 +156,12 @@ names the Japanese slip — dakuten, small kana, dropped ー — via `checkAnswe
 (new → learning → known), keyed by answer; missed/revealed words requeue within
 the session; no streak/lives/timer. Engine-first: `image` slot reserved, empty.
 Tests first: `tests/test_practice.py`, `tests/practice.test.js`. Checked in
-Chrome 375 (light) + dark; no console errors. **Waiting on:** user review, then
-discuss (images next, roll out to more sets).
+Chrome 375 (light) + dark. Reviewed: input feel fine (tiles "a little crowded"
+but ok), decoys ok for a beginner set. **Added a reverse/recognise card** on
+the user's request: a Build / Recognise toggle; recognise shows + speaks the
+Japanese and offers four English choices (one correct, three decoys from the
+same set). Full suite 32 content + 38 UI green. **Waiting on:** user review of
+the reverse card, then merge. Images still parked (user sourcing them).
 
 ## 5. Next — decided, in order
 
@@ -213,6 +217,10 @@ handwriting/stroke-order features.
 - Unverified external resource claims (Netflix availability of Terrace House,
   Italki pricing, etc.).
 - iOS Enhanced Japanese voice test (earlier agent's item): needs a device.
+- Two harmless pre-existing console messages (every page), for Round E polish:
+  a deprecated `apple-mobile-web-app-capable` warning (add
+  `<meta name="mobile-web-app-capable" content="yes">` beside it), and a
+  favicon 404 (no favicon is defined).
 - **Dark-mode contrast of accent-coloured text (on the live site already):** `--accent` (#8B2635) as
   text on dark backgrounds is 1.9–2.1:1. B1 added `--accent-text` (#e07a8f in
   dark, 5.76:1) and uses it for the sheet glyph only. Six older uses still on
