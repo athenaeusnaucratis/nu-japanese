@@ -136,7 +136,7 @@ read "Taken from part of the kanji X" (hiragana: "Simplified from"). ン shows
 no origin (disputed), ヲ no example. Tests extended first. Review list:
 `docs/reviews/b1-katakana-hooks.md`. **Reviewed and approved; merged to `main` (2026-10-04).**
 
-### Round B1, batch 3 — in flight (branch `round-b1-kanji`)
+### Round B1, batch 3 — done (branch `round-b1-kanji`)
 All 100 kanji open the sheet (kanji cards are buttons now): meaning, readings,
 memory hook, and — only for the pinned set — an origin line. 20 pictographs
 get a simple line drawing (picture → character); their hooks explain how the
@@ -144,7 +144,7 @@ drawing became the character. Compound kanji list "Built from" parts, each
 checked against KRADFILE (`tests/fixtures/kradfile_subset.txt`, EDRDG
 CC BY-SA 4.0, credited on the Resources page). 英's 央 part was dropped
 because KRADFILE lists 英 without 央's 一 (user may want to override).
-Review list: `docs/reviews/b1-kanji-hooks.md`. **Waiting on:** user review, then merge.
+Review list: `docs/reviews/b1-kanji-hooks.md`. **Reviewed and approved; merged to `main` (2026-10-04). Round B1 complete.**
 
 ## 5. Next — decided, in order
 
