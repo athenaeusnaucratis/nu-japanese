@@ -681,10 +681,12 @@ function startPractice(setId, mode) {
     mode = mode || 'build';
     // Build needs a kana answer to tile; Recognise works for every word.
     const items = mode === 'build' ? set.items.filter(it => it.answer) : set.items;
-    // New/learning first, known last \u2014 but everything is included.
+    // Shuffle each session so the order changes every time, then float the
+    // not-yet-known words to the front (known ones last, still shuffled).
     const prog = (state.practice && state.practice[setId]) || {};
-    const order = items.slice().sort((a, b) =>
-        (prog[a.id] === 'known' ? 1 : 0) - (prog[b.id] === 'known' ? 1 : 0));
+    const shuffled = items.slice();
+    for (let k = shuffled.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [shuffled[k], shuffled[j]] = [shuffled[j], shuffled[k]]; }
+    const order = shuffled.filter(it => prog[it.id] !== 'known').concat(shuffled.filter(it => prog[it.id] === 'known'));
     P = {setId: setId, title: set.title, total: order.length, mode: mode,
          items: set.items, queue: order, i: 0, built: [], done: 0, revealed: false};
 }

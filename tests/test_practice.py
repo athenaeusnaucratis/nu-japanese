@@ -94,3 +94,41 @@ class KanaAnswerAndIndex(unittest.TestCase):
                 + [sec for a in course['appendices'] for sec in a['sections']]
                 if s['type'] == 'vocab' for i in s['ids']}
         self.assertEqual(set(course['vocabById']), real)
+
+
+class GlossCleaning(unittest.TestCase):
+    def test_clean_gloss(self):
+        cases = {
+            'close \u2192 \u3057\u3081\u307e\u3059': 'close',          # drop the dict->masu arrow
+            'eat \u2192 \u305f\u3079\u307e\u3059': 'eat',
+            'to know (usually used as \u3057\u3063\u3066\u3044\u307e\u3059)': 'to know',  # JP in parens
+            '300 (sound change!)': '300',                              # "!" annotation
+            'I&rsquo;m home': 'I\u2019m home',                        # decode entity
+            'which [noun]?': 'which?',                                # drop placeholder
+            'cold (weather)': 'cold (weather)',                       # keep disambiguation
+            'fish (to eat)': 'fish (to eat)',
+            'you (use sparingly)': 'you (use sparingly)',
+            'to listen / to ask': 'to listen / to ask',
+            'Thank you (polite)': 'Thank you (polite)',
+            'rice; a cooked meal': 'rice; a cooked meal',
+        }
+        bad = {g: (build.clean_gloss(g), want) for g, want in cases.items() if build.clean_gloss(g) != want}
+        self.assertEqual(bad, {})
+
+    def test_clean_display(self):
+        self.assertEqual(build.clean_display('\u3069\u306e [noun]'), '\u3069\u306e')
+        self.assertEqual(build.clean_display('\u3053\u306e [noun]'), '\u3053\u306e')
+        self.assertEqual(build.clean_display('\u65e5\u66dc\u65e5 / \u306b\u3061\u3088\u3046\u3073'),
+                         '\u65e5\u66dc\u65e5 / \u306b\u3061\u3088\u3046\u3073')
+        self.assertEqual(build.clean_display('\u306d\u3053'), '\u306d\u3053')
+
+    def test_pool_and_index_are_clean(self):
+        course = build.make_course()
+        import re as _re
+        dirty = _re.compile(r'&[a-z]+;|&#\d+;|\u2192|\[|[\u3040-\u30ff\u4e00-\u9fff][^)]*\)')
+        bad_pool = [m for m in course['meaningPool'] if dirty.search(m)]
+        self.assertEqual(bad_pool, [])
+        bad_prompt = [v['prompt'] for v in course['vocabById'].values() if dirty.search(v['prompt'])]
+        self.assertEqual(bad_prompt, [])
+        self.assertEqual(course['vocabById']['v:\u3057\u3081\u308b|shimeru']['prompt'], 'close')
+        self.assertEqual(course['vocabById']['v:\u3069\u306e [noun]|dono [noun]']['display'], '\u3069\u306e')

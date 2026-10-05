@@ -9,6 +9,7 @@ index.html is GENERATED. Never hand-edit it — edit app.css / app.js, the
 content_*.py modules or this file, and rebuild, or your changes get overwritten.
 """
 import copy
+import html
 import json
 import os
 import re
@@ -83,6 +84,26 @@ def kana_answer(jp):
         if p and _KANA_BUILD.match(p):
             return p
     return ''
+
+
+_ANNOTATION_PAREN = re.compile(r'\s*\([^)]*[぀-ヿ一-鿿!][^)]*\)')
+
+
+def clean_gloss(en):
+    """An English gloss fit for a flashcard: the vocab tables carry teaching
+    annotations ("close → しめます", "300 (sound change!)",
+    "(usually used as …)") and HTML entities that read badly as a bare
+    prompt or a wrong-answer option. Keep plain disambiguation like "(weather)"."""
+    s = html.unescape(en)                                    # &rsquo; -> ’
+    s = re.sub(r'\s*→.*$', '', s)                       # drop "-> しめます" arrows
+    s = re.sub(r'\s*\[[^\]]*\]', '', s)                      # drop [noun] placeholders
+    s = _ANNOTATION_PAREN.sub('', s)                         # drop parens holding Japanese or "!"
+    return s.strip()
+
+
+def clean_display(jp):
+    """The written form shown on the recognise card: drop [noun] placeholders."""
+    return re.sub(r'\s*\[[^\]]*\]', '', html.unescape(jp)).strip()
 
 
 def all_vocab_rows():
@@ -164,8 +185,8 @@ def make_meaning_pool():
     for sec in [s for w in WEEKS for s in w['sections']] + [s for a in APPENDICES for s in a['sections']]:
         if sec.get('type') == 'vocab':
             for row in sec['rows']:
-                g = row[2]
-                if g not in seen:
+                g = clean_gloss(row[2])
+                if g and g not in seen:
                     seen.add(g); pool.append(g)
     return pool
 
@@ -180,7 +201,8 @@ def make_vocab_index():
         vid = vocab_id(row)
         if vid in out:
             continue
-        out[vid] = {'prompt': row[2], 'answer': kana_answer(row[0]), 'display': row[0], 'image': ''}
+        out[vid] = {'prompt': clean_gloss(row[2]), 'answer': kana_answer(row[0]),
+                    'display': clean_display(row[0]), 'image': ''}
     return out
 
 

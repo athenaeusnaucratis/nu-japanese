@@ -66,11 +66,12 @@ test('building the right answer advances and records it known', async () => {
 test('a wrong build gives specific, kind feedback and does not advance', async () => {
   const p = await loadPage();
   p.go('practice-food');
-  const answer = p.w.eval('practiceCurrentAnswer()');     // ごはん first
-  // build it missing the dakuten by tapping a decoy base if present, else assert via classifier path
-  p.w.eval('practiceDebugSetBuilt("こはん")');
+  const answer = p.w.eval('practiceCurrentAnswer()');
+  const short = [...answer].slice(0, -1).join('');          // one kana short of the current word
+  p.w.eval(`practiceDebugSetBuilt(${JSON.stringify(short)})`);
   p.doc.querySelector('.btn-check').click();
-  assert.match(p.doc.querySelector('.card-feedback').textContent, /dakuten/i);
+  assert.match(p.doc.querySelector('.card-feedback').textContent, /short|kana|not quite|try again/i);
+  assert.equal(p.doc.querySelector('.btn-next'), null);     // did not advance
   assert.equal(p.doc.querySelector('.practice-progress').textContent.includes('0 /'), true);
 });
 
@@ -176,22 +177,21 @@ test('switching to recognise shows no kana tiles', async () => {
 // ---- picture slot (Round C, images) ----
 test('an image shows on the Build card and is hidden on Recognise', async () => {
   const p = await loadPage();
-  // give the first item a picture at runtime (content ships empty slots)
-  p.w.eval('COURSE.practiceSets[0].items[0].image = "https://example.com/rice.jpg"');
   p.go('practice-food');
+  // put a picture on whichever card is showing, then re-render
+  p.w.eval('practiceCurrentItem().image = "https://example.com/rice.jpg"; render();');
   const img = p.doc.querySelector('.card-image');
   assert.ok(img, 'build card shows the image');
   assert.equal(img.getAttribute('src'), 'https://example.com/rice.jpg');
   assert.equal(img.getAttribute('loading'), 'lazy');
   assert.equal(img.getAttribute('alt'), p.w.eval('practiceCurrentCard().prompt'));
-  modeBtn(p, 'recognise').click();
+  p.doc.querySelector('.mode-recognise').click();
   assert.equal(p.doc.querySelector('.card-image'), null, 'recognise hides the image');
 });
 
 test('no image slot when the item has none', async () => {
-  const p = await loadPage();
-  p.w.eval('COURSE.practiceSets[0].items[0].image = ""');
-  p.go('practice-food');
+  const p = await loadPage({ storage: { [KEY]: withKnown(['v:ねこ|neko']) } });
+  p.go('practice-known');                 // known-deck items carry no image
   assert.equal(p.doc.querySelector('.card-image'), null);
 });
 
@@ -261,4 +261,35 @@ test('known deck empty state when nothing is starred', async () => {
   p.go('practice-known');
   assert.match(p.text(), /star|mark|haven|no words/i);
   assert.equal(p.doc.querySelector('.tile-tray'), null);
+});
+
+// ---- randomized order + clean option text ----
+test('each session shuffles the order', async () => {
+  const p = await loadPage();
+  const firsts = new Set();
+  for (let i = 0; i < 14; i++) { p.w.eval("startPractice('food','recognise')"); firsts.add(p.w.eval('P.queue[0].id')); }
+  assert.ok(firsts.size > 1, 'first card varies across sessions');
+  // still a full permutation (nothing lost or duplicated)
+  const n = p.w.eval('P.queue.length'); const total = p.w.eval('COURSE.practiceSets[0].items.length');
+  assert.equal(n, total);
+});
+
+test('recognise options carry no raw entities, arrows or placeholders', async () => {
+  const p = await loadPage({ storage: { [KEY]: withKnown([
+    'v:ただいま|tadaima', 'v:しめる|shimeru', 'v:どの [noun]|dono [noun]', 'v:三百|sanbyaku', 'v:ねこ|neko']) } });
+  p.go('practice-known');
+  p.doc.querySelector('.mode-recognise').click();
+  for (let i = 0; i < 20; i++) {
+    const opts = p.w.eval('meaningOptions(practiceCurrentItem())');
+    opts.forEach(t => assert.doesNotMatch(t, /&[a-z]+;|&#\d+;|→|\[|\]/, `dirty option: ${t}`));
+  }
+  // the displayed Japanese also has no placeholder
+  const cards = p.w.eval('COURSE.practiceSets ? "ok" : "no"');
+  assert.doesNotMatch(p.doc.querySelector('.card-jp').textContent, /\[|\]/);
+});
+
+test('known glosses are cleaned (close, not "close -> shimemasu")', async () => {
+  const p = await loadPage({ storage: { [KEY]: withKnown(['v:しめる|shimeru']) } });
+  p.go('practice-known');
+  assert.equal(p.w.eval('practiceCurrentCard().prompt'), 'close');
 });
