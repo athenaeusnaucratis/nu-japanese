@@ -62,3 +62,35 @@ class PracticeData(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class KanaAnswerAndIndex(unittest.TestCase):
+    def test_kana_answer(self):
+        cases = {
+            'ねこ': 'ねこ', 'すし': 'すし', 'アイスクリーム': 'アイスクリーム',
+            '日本人 / にほんじん': 'にほんじん', '本 / ほん': 'ほん', 'うち / いえ': 'うち',
+            'この [noun]': 'この', 'きれい(な)': 'きれい', 'ぎゅうにゅう / ミルク': 'ぎゅうにゅう',
+            '四': '', '一': '', '日本 / にほん': 'にほん',
+            'いち、に、さん、よん、ご': '',          # a list, not a single word
+        }
+        bad = {jp: (build.kana_answer(jp), want) for jp, want in cases.items() if build.kana_answer(jp) != want}
+        self.assertEqual(bad, {})
+
+    def test_vocab_index_shape(self):
+        idx = build.make_course()['vocabById']
+        self.assertGreater(len(idx), 300)
+        self.assertEqual(idx['v:ねこ|neko'], {'prompt': 'cat', 'answer': 'ねこ', 'display': 'ねこ', 'image': ''})
+        # a kanji-written word: recognise shows the kanji, build target is the kana reading
+        jpn = idx['v:日本人 / にほんじん|nihon-jin']
+        self.assertEqual(jpn['prompt'], 'Japanese person')
+        self.assertEqual(jpn['answer'], 'にほんじん')
+        self.assertEqual(jpn['display'], '日本人 / にほんじん')
+        # a bare-kanji number has no kana build target
+        self.assertEqual(idx['v:四|yon / shi']['answer'], '')
+
+    def test_every_index_id_is_a_real_vocab_id(self):
+        course = build.make_course()
+        real = {i for s in [sec for w in course['weeks'] for sec in w['sections']]
+                + [sec for a in course['appendices'] for sec in a['sections']]
+                if s['type'] == 'vocab' for i in s['ids']}
+        self.assertEqual(set(course['vocabById']), real)

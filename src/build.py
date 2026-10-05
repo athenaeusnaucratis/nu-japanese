@@ -72,6 +72,19 @@ def speak_text(jp):
     return s.strip()
 
 
+_KANA_BUILD = re.compile(r'^[぀-ヿー]+$')   # kana + ー only; no 、, no space
+
+
+def kana_answer(jp):
+    """A single kana string a learner can build from tiles, or '' if the word
+    has no kana form (e.g. a bare kanji whose only reading we store is romaji)."""
+    for part in jp.split(' / '):
+        p = re.sub(r'\[[^\]]*\]', '', part).replace('(な)', '').replace('〜', '').replace('～', '').strip()
+        if p and _KANA_BUILD.match(p):
+            return p
+    return ''
+
+
 def all_vocab_rows():
     for w in WEEKS:
         for sec in w['sections']:
@@ -157,6 +170,20 @@ def make_meaning_pool():
     return pool
 
 
+def make_vocab_index():
+    """Every course vocab word by stable ID, shaped as a practice item, so the
+    learner's known words become a practice deck. `answer` is the kana to build
+    (empty when the word has no kana form -> that word is recognise-only);
+    `display` is the word as written (what the recognise card shows)."""
+    out = {}
+    for row in all_vocab_rows():
+        vid = vocab_id(row)
+        if vid in out:
+            continue
+        out[vid] = {'prompt': row[2], 'answer': kana_answer(row[0]), 'display': row[0], 'image': ''}
+    return out
+
+
 def make_practice_sets():
     sets = []
     for st in content_practice.PRACTICE_SETS:
@@ -164,7 +191,8 @@ def make_practice_sets():
         for entry in st['items']:
             answer, prompt = entry[0], entry[1]
             image = entry[2] if len(entry) > 2 else ''
-            items.append({'id': 'p:' + st['id'] + ':' + answer, 'answer': answer, 'prompt': prompt, 'image': image})
+            items.append({'id': 'p:' + st['id'] + ':' + answer, 'answer': answer, 'prompt': prompt,
+                          'display': answer, 'image': image})
         sets.append({'id': st['id'], 'title': st['title'], 'blurb': st.get('blurb', ''), 'items': items})
     return sets
 
@@ -194,6 +222,8 @@ def make_course():
         'practiceSets': make_practice_sets(),
         # Wrong-answer pool for the recognise card.
         'meaningPool': make_meaning_pool(),
+        # Every vocab word by stable ID -> the learner's known words become a deck.
+        'vocabById': make_vocab_index(),
     }
 
 

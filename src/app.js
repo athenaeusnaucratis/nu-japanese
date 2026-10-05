@@ -177,6 +177,7 @@ function currentViewLabel() {
     if (v === 'resources') return 'Resources';
     if (v === 'practice') return 'Practice';
     if (v.startsWith('practice-')) {
+        if (v.slice(9) === 'known') return 'Your Known Words';
         const st = COURSE.practiceSets.find(x => x.id === v.slice(9));
         return st ? st.title : 'Practice';
     }
@@ -654,29 +655,44 @@ const FEEDBACK = {
 // --- session state (in-memory; per-item result is persisted to state.practice) ---
 let P = null;   // {setId, queue:[item...], i, built:[], done, revealed}
 
-function practiceRecord(setId, answer, status) {
+function practiceRecord(setId, itemId, status) {
     if (!state.practice) state.practice = {};
     if (!state.practice[setId]) state.practice[setId] = {};
-    state.practice[setId][answer] = status;
+    state.practice[setId][itemId] = status;   // keyed by item id (answer can be '' or shared)
     saveState();
 }
 
+// The learner's starred words, shaped as practice items (newest-starred first).
+function knownPracticeItems() {
+    const idx = COURSE.vocabById || {};
+    return Object.keys(state.known || {})
+        .filter(id => state.known[id] && idx[id])
+        .map(id => Object.assign({id: id}, idx[id]));
+}
+
+function practiceSet(setId) {
+    if (setId === 'known') return {id: 'known', title: 'Your Known Words', items: knownPracticeItems()};
+    return COURSE.practiceSets.find(s => s.id === setId);
+}
+
 function startPractice(setId, mode) {
-    const set = COURSE.practiceSets.find(s => s.id === setId);
+    const set = practiceSet(setId);
     if (!set) return;
+    mode = mode || 'build';
+    // Build needs a kana answer to tile; Recognise works for every word.
+    const items = mode === 'build' ? set.items.filter(it => it.answer) : set.items;
     // New/learning first, known last \u2014 but everything is included.
     const prog = (state.practice && state.practice[setId]) || {};
-    const order = set.items.slice().sort((a, b) =>
-        (prog[a.answer] === 'known' ? 1 : 0) - (prog[b.answer] === 'known' ? 1 : 0));
-    // 'build' = see English, build the Japanese. 'recognise' = see/hear the
-    // Japanese, choose the English.
-    P = {setId: setId, title: set.title, total: set.items.length, mode: mode || 'build',
+    const order = items.slice().sort((a, b) =>
+        (prog[a.id] === 'known' ? 1 : 0) - (prog[b.id] === 'known' ? 1 : 0));
+    P = {setId: setId, title: set.title, total: order.length, mode: mode,
          items: set.items, queue: order, i: 0, built: [], done: 0, revealed: false};
 }
 
+function practiceItemDisplay(it) { return it.display || it.answer; }
 function practiceCurrentItem() { return P && P.queue[P.i]; }
 function practiceCurrentAnswer() { const it = practiceCurrentItem(); return it ? it.answer : ''; }
-function practiceCurrentCard() { const it = practiceCurrentItem(); return it ? {mode: P.mode, answer: it.answer, prompt: it.prompt} : null; }
+function practiceCurrentCard() { const it = practiceCurrentItem(); return it ? {mode: P.mode, answer: it.answer, prompt: it.prompt, display: practiceItemDisplay(it)} : null; }
 
 // Reduce a gloss to its core so near-synonyms don't collide:
 // "fish (to eat)" and "fish" -> "fish"; "rice; a cooked meal" -> "rice".
@@ -733,15 +749,23 @@ function renderPracticeHome() {
     main.appendChild(el('h1', {}, 'Practice'));
     main.appendChild(el('hr', {class: 'divider'}));
     main.appendChild(el('p', {class: 'lead'}, 'Pick a set and build each word from its kana. No timers, no streaks \u2014 miss as many as you like; the ones you miss just come round again.'));
-    COURSE.practiceSets.forEach(set => {
+    const card = (set, blurb) => {
         const prog = (state.practice && state.practice[set.id]) || {};
-        const known = set.items.filter(it => prog[it.answer] === 'known').length;
-        main.appendChild(el('button', {class: 'set-card', onclick: () => go('practice-' + set.id)},
+        const known = set.items.filter(it => prog[it.id] === 'known').length;
+        return el('button', {class: 'set-card', onclick: () => go('practice-' + set.id)},
             el('div', {class: 'set-main'},
                 el('div', {class: 'set-title'}, set.title),
-                set.blurb ? el('div', {class: 'set-blurb'}, set.blurb) : null),
-            el('div', {class: 'set-count'}, known + ' / ' + set.items.length)));
-    });
+                blurb ? el('div', {class: 'set-blurb'}, blurb) : null),
+            el('div', {class: 'set-count'}, known + ' / ' + set.items.length));
+    };
+    COURSE.practiceSets.forEach(set => main.appendChild(card(set, set.blurb)));
+    // The learner's own deck: every word they've starred as known, across the course.
+    const known = {id: 'known', items: knownPracticeItems()};
+    main.appendChild(card(
+        {id: 'known', title: 'Your Known Words', items: known.items},
+        known.items.length
+            ? 'Every word you’ve starred as known — practise them by building or recognising.'
+            : 'Star words as known while you study, and they’ll gather here to practise.'));
     return main;
 }
 
@@ -749,6 +773,26 @@ function renderPractice(setId) {
     if (!P || P.setId !== setId) startPractice(setId);
     if (!P) return el('div', {}, 'Set not found.');
     const main = el('div', {class: 'practice'});
+    const switchMode = m => { if (P.mode !== m) { startPractice(setId, m); render(); } };
+    const topBar = () => el('div', {class: 'practice-top'},
+        el('button', {class: 'nav-btn', onclick: () => go('practice')}, '← Sets'),
+        el('div', {class: 'mode-switch'},
+            el('button', {class: 'mode-build' + (P.mode === 'build' ? ' active' : ''), type: 'button',
+                onclick: () => switchMode('build')}, 'Build'),
+            el('button', {class: 'mode-recognise' + (P.mode === 'recognise' ? ' active' : ''), type: 'button',
+                onclick: () => switchMode('recognise')}, 'Recognise')),
+        el('span', {class: 'practice-progress'}, P.done + ' / ' + P.total));
+    if (P.queue.length === 0) {
+        main.appendChild(topBar());
+        const fullCount = (practiceSet(setId) || {items: []}).items.length;
+        const note = setId === 'known'
+            ? (fullCount === 0
+                ? 'You haven’t starred any words as known yet. Tap the star on a vocabulary row while you study, and they’ll appear here to practise.'
+                : 'None of your known words can be built from kana yet (they’re written in kanji). Try Recognise.')
+            : 'Nothing to practise here yet.';
+        main.appendChild(el('div', {class: 'practice-card'}, el('p', {class: 'lead', style: 'margin:0'}, note)));
+        return main;
+    }
     if (P.i >= P.queue.length) {
         main.appendChild(el('h1', {}, P.title));
         main.appendChild(el('hr', {class: 'divider'}));
@@ -760,24 +804,17 @@ function renderPractice(setId) {
         return main;
     }
     const item = practiceCurrentItem();
-    const switchMode = m => { if (P.mode !== m) { startPractice(setId, m); render(); } };
-    main.appendChild(el('div', {class: 'practice-top'},
-        el('button', {class: 'nav-btn', onclick: () => go('practice')}, '\u2190 Sets'),
-        el('div', {class: 'mode-switch'},
-            el('button', {class: 'mode-build' + (P.mode === 'build' ? ' active' : ''), type: 'button',
-                onclick: () => switchMode('build')}, 'Build'),
-            el('button', {class: 'mode-recognise' + (P.mode === 'recognise' ? ' active' : ''), type: 'button',
-                onclick: () => switchMode('recognise')}, 'Recognise')),
-        el('span', {class: 'practice-progress'}, P.done + ' / ' + P.total)));
+    main.appendChild(topBar());
     const card = el('div', {class: 'practice-card'});
     const feedback = el('div', {class: 'card-feedback'});
     const controls = el('div', {class: 'practice-controls'});
 
     if (P.mode === 'recognise') {
         // See/hear the Japanese, choose the English.
-        card.appendChild(el('div', {class: 'card-jp inline-jp'}, item.answer,
+        const shown = practiceItemDisplay(item);
+        card.appendChild(el('div', {class: 'card-jp inline-jp'}, shown,
             el('button', {class: 'row-btn', type: 'button', title: 'Play audio',
-                onclick: ev => playFromRow(ev.currentTarget, item.answer)}, svgSpeaker())));
+                onclick: ev => playFromRow(ev.currentTarget, shown)}, svgSpeaker())));
         card.appendChild(el('div', {class: 'card-sub'}, 'What does this mean?'));
         card.appendChild(feedback);
         const opts = el('div', {class: 'option-list'});
@@ -790,7 +827,7 @@ function renderPractice(setId) {
                     opts.querySelectorAll('.option').forEach(b => b.disabled = true);
                     ev.currentTarget.classList.add('right');
                     feedback.textContent = FEEDBACK.correct; feedback.className = 'card-feedback ok';
-                    practiceRecord(setId, item.answer, 'known'); speak(item.answer); showNext();
+                    practiceRecord(setId, item.id, 'known'); speak(shown); showNext();
                 } else {
                     ev.currentTarget.classList.add('wrong'); ev.currentTarget.disabled = true;
                     feedback.textContent = '\u261d Not that one \u2014 try again, or reveal.'; feedback.className = 'card-feedback off';
@@ -804,7 +841,7 @@ function renderPractice(setId) {
             P.revealed = true;
             opts.querySelectorAll('.option').forEach(b => { b.disabled = true; if (b.textContent === item.prompt) b.classList.add('right'); });
             feedback.textContent = 'Answer: ' + item.prompt; feedback.className = 'card-feedback';
-            practiceRecord(setId, item.answer, 'learning');
+            practiceRecord(setId, item.id, 'learning');
             showNext(true);
         }}, 'Reveal');
         controls.appendChild(reveal);
@@ -845,13 +882,13 @@ function renderPractice(setId) {
         const verdict = checkAnswer(P.built.join(''), item.answer);
         feedback.textContent = FEEDBACK[verdict];
         feedback.className = 'card-feedback ' + (verdict === 'correct' ? 'ok' : 'off');
-        if (verdict === 'correct') { practiceRecord(setId, item.answer, 'known'); speak(item.answer); showNext(); }
+        if (verdict === 'correct') { practiceRecord(setId, item.id, 'known'); speak(item.answer); showNext(); }
     }}, 'Check');
     const reveal = el('button', {class: 'btn btn-reveal', type: 'button', onclick: () => {
         P.revealed = true; P.built = [...item.answer]; paint();
         feedback.textContent = 'Answer: ' + item.answer; feedback.className = 'card-feedback';
         speak(item.answer);
-        practiceRecord(setId, item.answer, 'learning');
+        practiceRecord(setId, item.id, 'learning');
         showNext(true);
     }}, 'Reveal');
     controls.appendChild(back); controls.appendChild(reveal); controls.appendChild(check);

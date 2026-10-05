@@ -180,6 +180,21 @@ match. Image-generation add-on: 29 of 50 monthly credits used (21 left);
 overall account ~0.5/25 credits. Full suite 33 content + 42 UI green; baked
 image verified loading in Chrome. **Round C complete and merged to `main` (2026-10-05).**
 
+### Round C follow-up — known words wired into Practice (branch `round-c-known`)
+`COURSE.vocabById` maps every course vocab word (431) by stable ID to a practice
+item {prompt(en), answer(kana build target, '' if none), display(as written), image}.
+A dynamic **"Your Known Words"** deck in Practice is built from `state.known`:
+Build uses the kana reading (words with no kana form are build-skipped, kept in
+Recognise); Recognise shows the written form (kanji) and audio. Practice progress
+is now keyed by **item id**, not the kana answer. SHORTCUT/NOTE: this resets
+food-set drill completion for anyone who practised in the ~1h the answer-keyed
+version was live (practice marks only; vocab stars untouched) — no migration
+written; offered to the user.
+
+Image sourcing: style compared FLUX (1 credit) vs Recraft (4) vs Nano Banana (11);
+FLUX chosen. **Cloudinary image-gen credits 50/50 used for the month** (renews on
+the free plan); comparison extras in cloudinary nu-japanese/compare/.
+
 ## 5. Next — decided, in order
 
 **Task 1 (cheap insurance, only urgent if Windows tools ever write files here)

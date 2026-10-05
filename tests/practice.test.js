@@ -56,7 +56,7 @@ test('building the right answer advances and records it known', async () => {
   p.doc.querySelector('.btn-check').click();
   assert.match(p.doc.querySelector('.card-feedback').textContent, /✓|nice|correct/i);
   const saved = JSON.parse(p.stored());
-  assert.equal(saved.practice.food[answer], 'known');
+  assert.equal(saved.practice.food['p:food:' + answer], 'known');
   // advancing shows a different card (or the summary)
   p.doc.querySelector('.btn-next').click();
   const after = p.doc.querySelector('.practice-progress')?.textContent;
@@ -108,7 +108,7 @@ test('practice state persists across reload and reset clears it', async () => {
   buildAnswer(p, a); p.doc.querySelector('.btn-check').click();
   const saved = p.stored();
   const p2 = await loadPage({ storage: { [KEY]: saved } });
-  assert.equal(JSON.parse(p2.stored()).practice.food[a], 'known');
+  assert.equal(JSON.parse(p2.stored()).practice.food['p:food:' + a], 'known');
 });
 
 test('no streak, lives, timer or points anywhere in practice', async () => {
@@ -140,7 +140,7 @@ test('choosing the right meaning records known and advances', async () => {
   const card = p.w.eval('practiceCurrentCard()');
   [...p.doc.querySelectorAll('.option')].find(o => o.textContent === card.prompt).click();
   assert.match(p.doc.querySelector('.card-feedback').textContent, /nice|✓/i);
-  assert.equal(JSON.parse(p.stored()).practice.food[card.answer], 'known');
+  assert.equal(JSON.parse(p.stored()).practice.food['p:food:' + card.answer], 'known');
   assert.ok(p.doc.querySelector('.btn-next'));
 });
 
@@ -153,7 +153,7 @@ test('choosing a wrong meaning gives feedback and does not advance', async () =>
   wrong.click();
   assert.match(p.doc.querySelector('.card-feedback').textContent, /not that one/i);
   assert.equal(p.doc.querySelector('.btn-next'), null);
-  assert.equal(card.answer in (JSON.parse(p.stored()).practice.food || {}), false);
+  assert.equal(('p:food:' + card.answer) in (JSON.parse(p.stored()).practice.food || {}), false);
 });
 
 test('recognise reveal shows the English and marks learning', async () => {
@@ -163,7 +163,7 @@ test('recognise reveal shows the English and marks learning', async () => {
   const card = p.w.eval('practiceCurrentCard()');
   p.doc.querySelector('.btn-reveal').click();
   assert.match(p.doc.querySelector('.card-feedback').textContent, new RegExp(card.prompt.split(';')[0]));
-  assert.equal(JSON.parse(p.stored()).practice.food[card.answer], 'learning');
+  assert.equal(JSON.parse(p.stored()).practice.food['p:food:' + card.answer], 'learning');
 });
 
 test('switching to recognise shows no kana tiles', async () => {
@@ -220,4 +220,45 @@ test('recognise decoys are drawn from a large, varied pool', async () => {
     const norm = s => s.toLowerCase().replace(/\([^)]*\)/g,'').split(/[;/]/)[0].replace(/[^a-z0-9 ]/g,'').trim();
     assert.equal(opts.filter(o => norm(o) === norm(card.prompt)).length, 1);
   }
+});
+
+// ---- known words wired into Practice ----
+function withKnown(ids) {
+  return JSON.stringify({ schema: 2, known: Object.fromEntries(ids.map(i => [i, true])), weekStatus: {} });
+}
+
+test('practice home shows a Known-words deck with the right count', async () => {
+  const p = await loadPage({ storage: { [KEY]: withKnown(['v:ねこ|neko', 'v:いぬ|inu', 'v:日本人 / にほんじん|nihon-jin']) } });
+  p.go('practice');
+  const card = [...p.doc.querySelectorAll('.set-card')].find(c => /known/i.test(c.textContent));
+  assert.ok(card, 'a Known-words card is listed');
+  assert.match(card.textContent, /3/);
+});
+
+test('known deck: Build uses the kana reading, Recognise shows the written word', async () => {
+  const p = await loadPage({ storage: { [KEY]: withKnown(['v:日本人 / にほんじん|nihon-jin']) } });
+  p.go('practice-known');
+  // build mode: answer is the kana reading
+  assert.equal(p.w.eval('practiceCurrentCard().answer'), 'にほんじん');
+  assert.equal(p.w.eval('practiceCurrentCard().prompt'), 'Japanese person');
+  // recognise mode shows the written form (kanji)
+  p.doc.querySelector('.mode-recognise').click();
+  assert.match(p.doc.querySelector('.card-jp').textContent, /日本人/);
+});
+
+test('known deck: Build skips words with no kana form; Recognise keeps them', async () => {
+  const p = await loadPage({ storage: { [KEY]: withKnown(['v:四|yon / shi', 'v:ねこ|neko']) } });
+  p.go('practice-known');                         // defaults to build
+  // build queue excludes 四 (no kana) -> only ねこ buildable
+  assert.equal(p.w.eval('P.queue.length'), 1);
+  assert.equal(p.w.eval('practiceCurrentAnswer()'), 'ねこ');
+  p.doc.querySelector('.mode-recognise').click();  // recognise keeps both
+  assert.equal(p.w.eval('P.queue.length'), 2);
+});
+
+test('known deck empty state when nothing is starred', async () => {
+  const p = await loadPage();
+  p.go('practice-known');
+  assert.match(p.text(), /star|mark|haven|no words/i);
+  assert.equal(p.doc.querySelector('.tile-tray'), null);
 });
