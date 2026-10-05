@@ -146,7 +146,7 @@ CC BY-SA 4.0, credited on the Resources page). 英's 央 part was dropped
 because KRADFILE lists 英 without 央's 一 (user may want to override).
 Review list: `docs/reviews/b1-kanji-hooks.md`. **Reviewed and approved; merged to `main` (2026-10-04). Round B1 complete.**
 
-### Round C v1 — in flight (branch `round-c-practice`)
+### Round C — done (branch `round-c-practice`), merged
 Tap-to-build recall engine. New `src/content_practice.py` defines named sets;
 first set = **Food & Drink** (29 words). A "Practice" nav item → set list →
 session: English prompt, build the kana by tapping tiles (answer's kana +
@@ -178,8 +178,7 @@ connector (flux standard) into the user's account, cloud `mqhcplej`, folder
 `content_practice.py` via `_img(slug)`. Reviewed as a contact sheet — all 29
 match. Image-generation add-on: 29 of 50 monthly credits used (21 left);
 overall account ~0.5/25 credits. Full suite 33 content + 42 UI green; baked
-image verified loading in Chrome. **Round C complete. Waiting on:** user's
-final look, then merge.
+image verified loading in Chrome. **Round C complete and merged to `main` (2026-10-05).**
 
 ## 5. Next — decided, in order
 
