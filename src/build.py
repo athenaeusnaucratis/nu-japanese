@@ -144,11 +144,27 @@ def make_glyphs():
     return g
 
 
+def make_meaning_pool():
+    """Distinct English glosses from every vocab row (weeks + appendices), for
+    the recognise card's wrong-answer choices. A big pool keeps decoys varied."""
+    seen, pool = set(), []
+    for sec in [s for w in WEEKS for s in w['sections']] + [s for a in APPENDICES for s in a['sections']]:
+        if sec.get('type') == 'vocab':
+            for row in sec['rows']:
+                g = row[2]
+                if g not in seen:
+                    seen.add(g); pool.append(g)
+    return pool
+
+
 def make_practice_sets():
     sets = []
     for st in content_practice.PRACTICE_SETS:
-        items = [{'id': 'p:' + st['id'] + ':' + answer, 'answer': answer, 'prompt': prompt, 'image': ''}
-                 for answer, prompt in st['items']]
+        items = []
+        for entry in st['items']:
+            answer, prompt = entry[0], entry[1]
+            image = entry[2] if len(entry) > 2 else ''
+            items.append({'id': 'p:' + st['id'] + ':' + answer, 'answer': answer, 'prompt': prompt, 'image': image})
         sets.append({'id': st['id'], 'title': st['title'], 'blurb': st.get('blurb', ''), 'items': items})
     return sets
 
@@ -176,6 +192,8 @@ def make_course():
         'glyphs': make_glyphs(),
         # Tap-to-build practice sets (Round C).
         'practiceSets': make_practice_sets(),
+        # Wrong-answer pool for the recognise card.
+        'meaningPool': make_meaning_pool(),
     }
 
 

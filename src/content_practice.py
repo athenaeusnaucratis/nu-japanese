@@ -7,7 +7,14 @@
 #
 # Keep answers kana-only (hiragana/katakana, ー ゛ ゜ included) — no kanji, no
 # latin — so every answer can be built from tiles. tests/test_practice.py checks
-# this. The `image` slot (Cloudinary URL, later) is reserved and left empty now.
+# this.
+#
+# To add a picture to a word, make its tuple (answer, prompt, image_url):
+#     ('すし', 'sushi', 'https://res.cloudinary.com/<cloud>/image/upload/.../sushi.jpg'),
+# Any https image URL works (Cloudinary, your own host, etc.). Leave it a
+# 2-tuple for no image. The picture shows only on the "Build" card (English +
+# picture → make the Japanese); the "Recognise" card hides it so it can't give
+# the answer away.
 
 PRACTICE_SETS = [
     {

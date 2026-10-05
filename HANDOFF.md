@@ -160,8 +160,18 @@ Chrome 375 (light) + dark. Reviewed: input feel fine (tiles "a little crowded"
 but ok), decoys ok for a beginner set. **Added a reverse/recognise card** on
 the user's request: a Build / Recognise toggle; recognise shows + speaks the
 Japanese and offers four English choices (one correct, three decoys from the
-same set). Full suite 32 content + 38 UI green. **Waiting on:** user review of
-the reverse card, then merge. Images still parked (user sourcing them).
+same set). Reverse card reviewed: "superb". Two follow-ups done:
+(a) **recognise decoys now come from the whole course vocabulary**
+(`COURSE.meaningPool`, 414 glosses) instead of the 29-word set, with a
+normalize guard so no decoy means the same as the answer — fixes repetition;
+(b) **picture support** on the Build card: an item tuple may carry a third
+element, an image URL (any https; Cloudinary suggested), rendered above the
+prompt with lazy-load and graceful failure; the Recognise card hides it so it
+can't give the answer away. Content ships with all 29 image slots EMPTY — the
+user supplies their hand-picked pictures (paste URLs into content_practice.py,
+or give a Cloudinary cloud name to wire fetch-optimised delivery). Full suite
+32 content + 41 UI green; image + decoy variety verified in Chrome.
+**Waiting on:** user's 29 image URLs (or go-ahead to source CC0), then merge.
 
 ## 5. Next — decided, in order
 

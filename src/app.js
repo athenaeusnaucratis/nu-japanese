@@ -678,12 +678,29 @@ function practiceCurrentItem() { return P && P.queue[P.i]; }
 function practiceCurrentAnswer() { const it = practiceCurrentItem(); return it ? it.answer : ''; }
 function practiceCurrentCard() { const it = practiceCurrentItem(); return it ? {mode: P.mode, answer: it.answer, prompt: it.prompt} : null; }
 
-// For the recognise card: the right English plus three decoy meanings from the
-// same set, shuffled.
+// Reduce a gloss to its core so near-synonyms don't collide:
+// "fish (to eat)" and "fish" -> "fish"; "rice; a cooked meal" -> "rice".
+function normalizeMeaning(s) {
+    return String(s).toLowerCase().replace(/\([^)]*\)/g, '').split(/[;/]/)[0].replace(/[^a-z0-9 ]/g, '').trim();
+}
+// For the recognise card: the right English plus three decoys drawn from the
+// whole course vocabulary (COURSE.meaningPool) so choices stay varied. No decoy
+// may mean the same thing as the answer.
 function meaningOptions(item) {
-    const others = P.items.filter(x => x.prompt !== item.prompt).map(x => x.prompt);
-    for (let k = others.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [others[k], others[j]] = [others[j], others[k]]; }
-    const opts = [item.prompt].concat(others.slice(0, 3));
+    const bad = normalizeMeaning(item.prompt);
+    const pool = (COURSE.meaningPool || P.items.map(x => x.prompt))
+        .filter(m => m !== item.prompt && normalizeMeaning(m) !== bad);
+    const picked = [];
+    const used = new Set([bad]);
+    const bag = pool.slice();
+    for (let k = bag.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [bag[k], bag[j]] = [bag[j], bag[k]]; }
+    for (const m of bag) {
+        const n = normalizeMeaning(m);
+        if (used.has(n)) continue;           // no two decoys that read the same
+        used.add(n); picked.push(m);
+        if (picked.length === 3) break;
+    }
+    const opts = [item.prompt].concat(picked);
     for (let k = opts.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [opts[k], opts[j]] = [opts[j], opts[k]]; }
     return opts;
 }
@@ -796,7 +813,12 @@ function renderPractice(setId) {
         return main;
     }
 
-    // Build mode: see English, build the Japanese from tiles.
+    // Build mode: see English (+ picture, if any), build the Japanese from tiles.
+    if (item.image) {
+        const img = el('img', {class: 'card-image', src: item.image, alt: item.prompt, loading: 'lazy', decoding: 'async'});
+        img.addEventListener('error', () => img.remove());   // a broken URL just vanishes
+        card.appendChild(img);
+    }
     card.appendChild(el('div', {class: 'card-prompt', html: richText(item.prompt)}));
     const slots = el('div', {class: 'answer-slots inline-jp'});
     const paint = () => { slots.textContent = P.built.length ? P.built.join('') : '\u00a0'; };

@@ -757,3 +757,16 @@ button.kanji-card.playing { border-color: var(--accent); }
 .option.right { background: var(--resource-bg); border-color: var(--resource-border); color: var(--resource-head); font-weight: 600; }
 .option.wrong { background: var(--grammar-bg); border-color: var(--grammar-border); color: var(--grammar-head); }
 .option:disabled { cursor: default; }
+
+/* ---------- Practice: picture on the Build card ---------- */
+.card-image {
+    display: block;
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+    margin: 0 auto 16px;
+    background: var(--table-row-alt);
+    border: 1px solid var(--rule);
+}

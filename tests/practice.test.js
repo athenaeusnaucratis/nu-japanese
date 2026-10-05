@@ -172,3 +172,45 @@ test('switching to recognise shows no kana tiles', async () => {
   modeBtn(p, 'recognise').click();
   assert.equal(p.doc.querySelector('.tile-tray'), null);
 });
+
+// ---- picture slot (Round C, images) ----
+test('an image shows on the Build card and is hidden on Recognise', async () => {
+  const p = await loadPage();
+  // give the first item a picture at runtime (content ships empty slots)
+  p.w.eval('COURSE.practiceSets[0].items[0].image = "https://example.com/rice.jpg"');
+  p.go('practice-food');
+  const img = p.doc.querySelector('.card-image');
+  assert.ok(img, 'build card shows the image');
+  assert.equal(img.getAttribute('src'), 'https://example.com/rice.jpg');
+  assert.equal(img.getAttribute('loading'), 'lazy');
+  assert.equal(img.getAttribute('alt'), p.w.eval('practiceCurrentCard().prompt'));
+  modeBtn(p, 'recognise').click();
+  assert.equal(p.doc.querySelector('.card-image'), null, 'recognise hides the image');
+});
+
+test('no image slot when the item has none', async () => {
+  const p = await loadPage();
+  p.go('practice-food');
+  assert.equal(p.doc.querySelector('.card-image'), null);
+});
+
+// ---- decoy variety: wrong answers come from the whole vocabulary ----
+test('recognise decoys are drawn from a large, varied pool', async () => {
+  const p = await loadPage();
+  assert.ok(p.w.eval('COURSE.meaningPool.length') > 200);
+  p.go('practice-food');
+  modeBtn(p, 'recognise').click();
+  const card = p.w.eval('practiceCurrentCard()');
+  // across many draws, decoys should range beyond the 29-word food set
+  const seen = new Set();
+  for (let i = 0; i < 40; i++) p.w.eval('meaningOptions(practiceCurrentItem())').forEach(m => seen.add(m));
+  assert.ok(seen.size > 20, 'decoys vary widely');
+  const foodPrompts = new Set(p.w.eval('COURSE.practiceSets[0].items.map(it => it.prompt)'));
+  assert.ok([...seen].some(m => !foodPrompts.has(m)), 'some decoys come from outside the set');
+  // never a decoy meaning the same as the answer
+  for (let i = 0; i < 40; i++) {
+    const opts = p.w.eval(`meaningOptions({answer:${JSON.stringify(card.answer)}, prompt:${JSON.stringify(card.prompt)}})`);
+    const norm = s => s.toLowerCase().replace(/\([^)]*\)/g,'').split(/[;/]/)[0].replace(/[^a-z0-9 ]/g,'').trim();
+    assert.equal(opts.filter(o => norm(o) === norm(card.prompt)).length, 1);
+  }
+});
