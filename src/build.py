@@ -106,6 +106,15 @@ def clean_display(jp):
     return re.sub(r'\s*\[[^\]]*\]', '', html.unescape(jp)).strip()
 
 
+def is_list_row(jp):
+    """True when a vocab row is a grouped *reference* entry — a run of forms read
+    together ("いち、に、さん" → "1–5", "ふつか、みっか、よっか") — rather than a single
+    word. These make poor recall cards and can't be built from tiles, so the
+    thematic practice sets drop them. A ' / ' variant (ちち / おとうさん) or an
+    embedded space (おとこの ひと) is still one word, not a list."""
+    return '、' in jp or '…' in jp
+
+
 def all_vocab_rows():
     for w in WEEKS:
         for sec in w['sections']:
@@ -206,6 +215,68 @@ def make_vocab_index():
     return out
 
 
+# Each h3 of the appendix Vocabulary Index that should become a practice set,
+# mapped to a stable set id (progress is stored under the id, so it must not
+# drift) and a calm one-line blurb. Two themes are deliberately absent:
+#   - "Food & drink" — its curated, pictured set lives in content_practice.py and
+#     is the only food set (deriving a second, text-only one would duplicate it).
+#   - "Numbers & counters" — once the grouped list rows are dropped it holds a
+#     single word, too few for a set.
+_THEME_SETS = {
+    'Greetings & social':        ('greetings',    'The small phrases that open and close a conversation.'),
+    'People':                    ('people',       'Family, friends and the people around you.'),
+    'Nationalities & countries': ('countries',    'Countries, and the words for the people who live there.'),
+    'Everyday things':           ('things',       'The everyday objects and places of ordinary life.'),
+    'Verbs (ます-form)':          ('verbs',        'The doing words, in their polite ます-form.'),
+    'い-adjectives':             ('i-adjectives', 'Describing words that end in い.'),
+    'な-adjectives':             ('na-adjectives', 'Describing words that take な before a noun.'),
+    'Time & dates':              ('time',         'Days, parts of the day, and when things happen.'),
+    'Weather, nature & animals': ('nature',       'Weather, the natural world and a few animals.'),
+    'Pronouns & question words': ('questions',    'Pointing words and question words — this, where, who.'),
+}
+_MIN_THEME_ITEMS = 6
+
+
+def make_thematic_sets():
+    """Turn each themed section of the appendix Vocabulary Index into a practice
+    set, so every group the learner meets in the course — not just Food — can be
+    drilled. One source of truth: editing a word in the index flows straight to
+    practice. Grouped reference rows are dropped (is_list_row); recall-worthy
+    words stay. These sets are text-only (image credits are spent for the month);
+    the engine shows build/recognise cards without a picture."""
+    vi = next((a for a in APPENDICES if a['title'] == 'Vocabulary Index'), None)
+    if not vi:
+        return []
+    sets, label, rows = [], None, []
+
+    def flush():
+        spec = _THEME_SETS.get(label)
+        if not spec:
+            return
+        set_id, blurb = spec
+        items, seen = [], set()
+        for row in rows:
+            if is_list_row(row[0]):
+                continue
+            vid = vocab_id(row)
+            if vid in seen:
+                continue
+            seen.add(vid)
+            items.append({'id': vid, 'answer': kana_answer(row[0]),
+                          'prompt': clean_gloss(row[2]), 'display': clean_display(row[0]), 'image': ''})
+        if len(items) >= _MIN_THEME_ITEMS:
+            sets.append({'id': set_id, 'title': label, 'blurb': blurb, 'items': items})
+
+    for sec in vi['sections']:
+        if sec.get('type') == 'h3':
+            flush()
+            label, rows = sec['text'], []
+        elif sec.get('type') == 'vocab' and label is not None:
+            rows.extend(sec['rows'])
+    flush()
+    return sets
+
+
 def make_practice_sets():
     sets = []
     for st in content_practice.PRACTICE_SETS:
@@ -216,6 +287,9 @@ def make_practice_sets():
             items.append({'id': 'p:' + st['id'] + ':' + answer, 'answer': answer, 'prompt': prompt,
                           'display': answer, 'image': image})
         sets.append({'id': st['id'], 'title': st['title'], 'blurb': st.get('blurb', ''), 'items': items})
+    # The curated Food set stays first (it carries the pictures); the themed
+    # sets from the Vocabulary Index follow, in the course's own order.
+    sets.extend(make_thematic_sets())
     return sets
 
 

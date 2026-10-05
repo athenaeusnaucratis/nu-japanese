@@ -195,6 +195,25 @@ Image sourcing: style compared FLUX (1 credit) vs Recraft (4) vs Nano Banana (11
 FLUX chosen. **Cloudinary image-gen credits 50/50 used for the month** (renews on
 the free plan); comparison extras in cloudinary nu-japanese/compare/.
 
+### Round C follow-up — themed sets rolled out (branch `practice-themes`)
+`make_thematic_sets()` in build.py turns each themed section of the appendix
+**Vocabulary Index** into a practice set — one source of truth, so editing a word
+in the index flows to practice. 10 new sets join curated Food: Greetings (21),
+People (22), Nationalities & countries (18), Everyday things (27), Verbs ます (31),
+い-adjectives (32), な-adjectives (16), Time & dates (24), Weather/nature/animals
+(18), Pronouns & question words (9). `is_list_row()` (fixture-first) drops grouped
+reference rows (いち、に、さん ↔ "1–5"; … ranges) that make poor cards and can't be
+tiled; `_MIN_THEME_ITEMS=6` drops Numbers & counters (1 left after filtering);
+Food & drink is skipped (its pictured curated set is the only food set). Item id =
+stable vocab id (recognise-only kanji words keep answer=''). **These sets are
+text-only** (SHORTCUT: image credits spent this month; the engine shows build/
+recognise with no picture — pictures can be added per set after the credit renews).
+No app.js change: renderPracticeHome/currentViewLabel/practiceSet already iterate
+COURSE.practiceSets. Tests: ListRowClassifier (9 must-list / 10 must-word / 2
+unsure) + ThematicSets; 48 Python + 49 Node green. Local Chrome: 12 cards render,
+verbs Build (tiles+dakuten decoys, no image) and Recognise (4 clean varied options)
+both work.
+
 ## 5. Next — decided, in order
 
 **Task 1 (cheap insurance, only urgent if Windows tools ever write files here)
